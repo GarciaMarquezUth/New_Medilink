@@ -38,6 +38,10 @@ new class extends Component
                     <x-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>
                         {{ __('Pacientes') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>
+                        {{ __('Citas') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -92,6 +96,10 @@ new class extends Component
 
             <x-responsive-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>
                 {{ __('Pacientes') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>
+                {{ __('Citas') }}
             </x-responsive-nav-link>
         </div>
 

@@ -57,7 +57,7 @@
 
                     <div class="flex justify-end mt-6">
                         <a href="{{ route('pacientes.index') }}" class="mr-4 text-gray-600 hover:text-gray-800">Cancelar</a>
-                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Actualizar Paciente</button>
+                        <button type="submit" class="bg-indigo-600 text-black px-4 py-2 rounded">Actualizar Paciente</button>
                     </div>
                 </form>
             </div>

@@ -11,7 +11,7 @@
                 
                 <div class="flex justify-between mb-6">
                     <h3 class="text-lg font-medium text-gray-900">Pacientes Registrados</h3>
-                    <a href="{{ route('pacientes.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                    <a href="{{ route('pacientes.create') }}" class="bg-indigo-600 text-black px-4 py-2 rounded-md hover:bg-indigo-700">
                         + Nuevo Paciente
                     </a>
                 </div>

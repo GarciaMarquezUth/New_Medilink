@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MedicoController;
-use App\Http\Controllers\PacienteController; // <--- Importa el nuevo controlador
+use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\CitaController; // <--- Importa el controlador de Citas
 
 // Ruta pública
 Route::view('/', 'welcome');
@@ -17,7 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // CRUDs bajo el prefijo /dashboard/
     Route::prefix('dashboard')->group(function () {
         Route::resource('medicos', MedicoController::class);
-        Route::resource('pacientes', PacienteController::class); // <--- Nueva línea para Pacientes
+        Route::resource('pacientes', PacienteController::class);
+        Route::resource('citas', CitaController::class); // <--- Nueva línea para Citas
     });
 });
 
