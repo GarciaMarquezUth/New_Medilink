@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('disponibilidades', function (Blueprint $table) {
             $table->id();
+            // Relación con médicos (asegúrate de que tu tabla se llame 'medicos')
+            $table->foreignId('medico_id')->constrained('medicos')->onDelete('cascade');
+            
+            $table->integer('dia_semana'); // 1 = Lunes, 2 = Martes, ..., 7 = Domingo
+            $table->time('hora_inicio');
+            $table->time('hora_fin');
             $table->timestamps();
         });
     }

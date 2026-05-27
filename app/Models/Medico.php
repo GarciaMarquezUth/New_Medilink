@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Medico extends Model
 {
-    // Asegúrate de incluir todos los campos que se guardarán desde el formulario
     protected $fillable = [
         'nombre', 
         'apellido', 
@@ -14,4 +14,13 @@ class Medico extends Model
         'especialidad', 
         'telefono'
     ];
+
+    /**
+     * Un médico tiene muchas disponibilidades.
+     */
+    public function disponibilidades(): HasMany
+    {
+        // Usamos la ruta absoluta de la clase para evitar errores de carga
+        return $this->hasMany(\App\Models\Disponibilidad::class);
+    }
 }

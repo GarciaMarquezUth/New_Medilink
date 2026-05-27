@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('servicios', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre');          // Nombre del servicio (ej. Consulta General)
+            $table->integer('duracion_minutos'); // Duración en minutos (ej. 30)
             $table->timestamps();
         });
     }

@@ -14,6 +14,14 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            // AQUÍ AGREGAMOS TUS COLORES PERSONALIZADOS
+            colors: {
+                brand: {
+                    DEFAULT: '#7e22ce', // Morado principal
+                    light: '#e9d5ff',   // Morado muy claro
+                    dark: '#6b21a8',    // Morado oscuro
+                },
+            },
         },
     },
 
