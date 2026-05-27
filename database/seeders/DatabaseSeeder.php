@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +15,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach (['admin', 'recepcionista', 'medico', 'paciente'] as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
+        $users = [
+            ['name' => 'Administrador', 'email' => 'admin@example.com', 'role' => 'admin'],
+            ['name' => 'Recepcionista', 'email' => 'recepcionista@example.com', 'role' => 'recepcionista'],
+            ['name' => 'Médico', 'email' => 'medico@example.com', 'role' => 'medico'],
+            ['name' => 'Paciente', 'email' => 'paciente@example.com', 'role' => 'paciente'],
+        ];
+
+        foreach ($users as $data) {
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'password' => Hash::make('password'),
+                ]
+            );
+
+            $user->syncRoles([$data['role']]);
+        }
     }
 }

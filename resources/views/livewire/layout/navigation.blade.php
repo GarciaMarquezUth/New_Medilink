@@ -16,110 +16,88 @@ new class extends Component
     }
 }; ?>
 
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" wire:navigate>
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
+<div x-data="{ open: false }">
+    <aside class="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-slate-200/80 bg-white/95 px-5 py-6 shadow-xl shadow-slate-200/50 backdrop-blur lg:flex lg:flex-col">
+        <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center gap-3 rounded-3xl bg-gradient-to-br from-violet-600 to-purple-700 p-4 text-white shadow-lg shadow-violet-600/25">
+            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-xl font-black ring-1 ring-white/25">M</span>
+            <span>
+                <span class="block text-lg font-extrabold leading-5">MediLink</span>
+                <span class="text-xs font-semibold text-violet-100">Sistema clínico</span>
+            </span>
+        </a>
+
+        <nav class="mt-8 flex flex-1 flex-col gap-2">
+            <a href="{{ route('dashboard') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('dashboard') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg>
+                Dashboard
+            </a>
+
+            @hasanyrole(['admin', 'recepcionista'])
+                <a href="{{ route('medicos.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('medicos.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M18 8h4m-2-2v4"/></svg>
+                    Médicos
+                </a>
+
+                <a href="{{ route('pacientes.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('pacientes.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20a5 5 0 00-10 0M12 12a4 4 0 100-8 4 4 0 000 8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 11v6m3-3h-6"/></svg>
+                    Pacientes
+                </a>
+            @endhasanyrole
+
+            <a href="{{ route('citas.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+                Citas
+            </a>
+        </nav>
+
+        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-sm font-extrabold text-violet-700">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
-
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    
-                    <x-nav-link :href="route('medicos.index')" :active="request()->routeIs('medicos.*')" wire:navigate>
-                        {{ __('Médicos') }}
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>
-                        {{ __('Pacientes') }}
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>
-                        {{ __('Citas') }}
-                    </x-nav-link>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-bold text-slate-900">{{ auth()->user()->name }}</p>
+                    <p class="truncate text-xs font-medium text-slate-500">{{ auth()->user()->email }}</p>
                 </div>
             </div>
 
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <a href="{{ route('profile') }}" wire:navigate class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-center text-xs font-bold text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">Perfil</a>
+                <button wire:click="logout" class="rounded-2xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-700">Salir</button>
+            </div>
+        </div>
+    </aside>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
+    <div class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur lg:hidden">
+        <div class="flex h-16 items-center justify-between px-4">
+            <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-600 text-lg font-black text-white shadow-lg shadow-violet-600/20">M</span>
+                <span class="text-base font-extrabold text-slate-900">MediLink</span>
+            </a>
+            <button type="button" @click="open = ! open" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-violet-50 hover:text-violet-700" aria-label="Abrir navegación">
+                <svg x-show="! open" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <svg x-show="open" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile')" wire:navigate>
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+        <div x-show="open" x-transition class="border-t border-slate-200 bg-white px-4 py-4">
+            <div class="space-y-2">
+                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>Dashboard</x-responsive-nav-link>
 
-                        <button wire:click="logout" class="w-full text-start">
-                            <x-dropdown-link>
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </button>
-                    </x-slot>
-                </x-dropdown>
+                @hasanyrole(['admin', 'recepcionista'])
+                    <x-responsive-nav-link :href="route('medicos.index')" :active="request()->routeIs('medicos.*')" wire:navigate>Médicos</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>Pacientes</x-responsive-nav-link>
+                @endhasanyrole
+
+                <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>Citas</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('profile')" :active="request()->routeIs('profile')" wire:navigate>Perfil</x-responsive-nav-link>
             </div>
 
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+            <div class="mt-4 rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm font-bold text-slate-900">{{ auth()->user()->name }}</p>
+                <p class="text-xs font-medium text-slate-500">{{ auth()->user()->email }}</p>
+                <button wire:click="logout" class="mt-3 w-full rounded-2xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Cerrar sesión</button>
             </div>
         </div>
     </div>
-
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            
-            <x-responsive-nav-link :href="route('medicos.index')" :active="request()->routeIs('medicos.*')" wire:navigate>
-                {{ __('Médicos') }}
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>
-                {{ __('Pacientes') }}
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>
-                {{ __('Citas') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800" x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></div>
-                <div class="font-medium text-sm text-gray-500">{{ auth()->user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile')" wire:navigate>
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <button wire:click="logout" class="w-full text-start">
-                    <x-responsive-nav-link>
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </button>
-            </div>
-        </div>
-    </div>
-</nav>
+</div>

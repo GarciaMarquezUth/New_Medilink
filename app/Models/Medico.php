@@ -3,15 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Medico extends Model
 {
-    // Asegúrate de incluir todos los campos que se guardarán desde el formulario
     protected $fillable = [
-        'nombre', 
-        'apellido', 
-        'email', 
-        'especialidad', 
-        'telefono'
+        'nombre',
+        'apellido',
+        'email',
+        'especialidad',
+        'telefono',
+        'user_id',
     ];
+
+    // Relación: Un médico pertenece a un usuario del sistema
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Relación: Un médico tiene muchas citas
+    public function citas(): HasMany
+    {
+        return $this->hasMany(Cita::class);
+    }
+
+    public function disponibilidades(): HasMany
+    {
+        return $this->hasMany(Disponibilidad::class);
+    }
 }

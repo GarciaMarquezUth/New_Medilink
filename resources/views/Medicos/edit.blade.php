@@ -1,45 +1,71 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Editar Médico') }}
-        </h2>
+        <div>
+            <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Equipo clínico</p>
+            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Editar médico</h1>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                
-                <form action="{{ route('medicos.update', $medico->id) }}" method="POST">
-                    @csrf 
-                    @method('PUT')
+    <form action="{{ route('medicos.update', $medico->id) }}" method="POST" class="mx-auto max-w-4xl space-y-6">
+        @csrf
+        @method('PUT')
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Nombre</label>
-                        <input type="text" name="nombre" value="{{ old('nombre', $medico->nombre) }}" 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                    </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 sm:p-8">
+            <div class="mb-6">
+                <h2 class="text-lg font-extrabold text-slate-950">Datos del médico</h2>
+                <p class="mt-1 text-sm font-medium text-slate-500">Actualiza información profesional y usuario vinculado.</p>
+            </div>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Especialidad</label>
-                        <input type="text" name="especialidad" value="{{ old('especialidad', $medico->especialidad) }}" 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                    </div>
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <x-input-label for="nombre" value="Nombre" />
+                    <x-text-input id="nombre" name="nombre" value="{{ old('nombre', $medico->nombre) }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('nombre')" />
+                </div>
 
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
-                        <input type="text" name="telefono" value="{{ old('telefono', $medico->telefono) }}" 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
+                <div>
+                    <x-input-label for="apellido" value="Apellido" />
+                    <x-text-input id="apellido" name="apellido" value="{{ old('apellido', $medico->apellido) }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('apellido')" />
+                </div>
 
-                    <div class="flex items-center justify-end">
-                        <a href="{{ route('medicos.index') }}" class="mr-4 text-gray-600 hover:text-gray-800">Cancelar</a>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
-                            Actualizar Médico
-                        </button>
-                    </div>
-                </form>
+                <div>
+                    <x-input-label for="email" value="Correo electrónico" />
+                    <x-text-input id="email" type="email" name="email" value="{{ old('email', $medico->email) }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('email')" />
+                </div>
 
+                <div>
+                    <x-input-label for="telefono" value="Teléfono" />
+                    <x-text-input id="telefono" name="telefono" value="{{ old('telefono', $medico->telefono) }}" class="mt-2" />
+                    <x-input-error :messages="$errors->get('telefono')" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <x-input-label for="especialidad" value="Especialidad" />
+                    <x-text-input id="especialidad" name="especialidad" value="{{ old('especialidad', $medico->especialidad) }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('especialidad')" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <x-input-label for="user_id" value="Usuario vinculado" />
+                    <select id="user_id" name="user_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10">
+                        <option value="">Sin usuario vinculado</option>
+                        @foreach($usuariosMedicos as $usuario)
+                            <option value="{{ $usuario->id }}" {{ (int) old('user_id', $medico->user_id) === $usuario->id ? 'selected' : '' }}>
+                                {{ $usuario->name }} - {{ $usuario->email }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-sm font-medium text-slate-500">Solo aparecen usuarios con rol médico.</p>
+                    <x-input-error :messages="$errors->get('user_id')" />
+                </div>
             </div>
         </div>
-    </div>
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <a href="{{ route('medicos.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Cancelar</a>
+            <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">Actualizar médico</button>
+        </div>
+    </form>
 </x-app-layout>

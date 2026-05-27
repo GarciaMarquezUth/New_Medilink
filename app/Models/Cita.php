@@ -13,6 +13,7 @@ class Cita extends Model
     protected $fillable = [
         'medico_id',
         'paciente_id',
+        'servicio_id',
         'fecha_hora',
         'motivo',
         'estado',
@@ -32,5 +33,10 @@ class Cita extends Model
     public function paciente(): BelongsTo
     {
         return $this->belongsTo(Paciente::class);
+    }
+
+    public function servicio(): BelongsTo
+    {
+        return $this->belongsTo(Servicio::class);
     }
 }

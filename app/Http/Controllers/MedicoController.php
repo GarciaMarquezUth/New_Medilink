@@ -3,26 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medico;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class MedicoController extends Controller
 {
-    // Muestra la lista de médicos
     public function index(): View
     {
-        $medicos = Medico::all();
+        $medicos = Medico::with('user')->get();
+
         return view('Medicos.index', compact('medicos'));
     }
 
-    // Muestra el formulario para crear un nuevo médico
     public function create(): View
     {
-        return view('Medicos.create');
+        $usuariosMedicos = $this->usuariosConRol('medico');
+
+        return view('Medicos.create', compact('usuariosMedicos'));
     }
 
-    // Almacena un nuevo médico en la base de datos
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -31,21 +33,25 @@ class MedicoController extends Controller
             'email' => 'required|email|max:255|unique:medicos,email',
             'especialidad' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
+            'user_id' => 'nullable|exists:users,id|unique:medicos,user_id',
         ]);
+
+        $validated['user_id'] = $validated['user_id'] ?? null;
+        $this->ensureUserHasRole($validated['user_id'], 'medico');
 
         Medico::create($validated);
 
         return redirect()->route('medicos.index')->with('success', 'Médico registrado exitosamente.');
     }
 
-    // Muestra el formulario de edición
     public function edit(int $id): View
     {
         $medico = Medico::findOrFail($id);
-        return view('Medicos.edit', compact('medico'));
+        $usuariosMedicos = $this->usuariosConRol('medico');
+
+        return view('Medicos.edit', compact('medico', 'usuariosMedicos'));
     }
 
-    // Actualiza los datos del médico
     public function update(Request $request, int $id): RedirectResponse
     {
         $medico = Medico::findOrFail($id);
@@ -53,22 +59,47 @@ class MedicoController extends Controller
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:medicos,email,' . $id,
+            'email' => 'required|email|max:255|unique:medicos,email,'.$id,
             'especialidad' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
+            'user_id' => 'nullable|exists:users,id|unique:medicos,user_id,'.$id,
         ]);
+
+        $validated['user_id'] = $validated['user_id'] ?? null;
+        $this->ensureUserHasRole($validated['user_id'], 'medico');
 
         $medico->update($validated);
 
         return redirect()->route('medicos.index')->with('success', 'Datos del médico actualizados.');
     }
 
-    // Elimina un médico
     public function destroy(int $id): RedirectResponse
     {
         $medico = Medico::findOrFail($id);
         $medico->delete();
 
         return redirect()->route('medicos.index')->with('success', 'Médico eliminado del sistema.');
+    }
+
+    private function usuariosConRol(string $role)
+    {
+        return User::whereHas('roles', function ($query) use ($role) {
+            $query->where('name', $role);
+        })->orderBy('name')->get();
+    }
+
+    private function ensureUserHasRole(?int $userId, string $role): void
+    {
+        if (! $userId) {
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+
+        if (! $user->hasRole($role)) {
+            throw ValidationException::withMessages([
+                'user_id' => "El usuario seleccionado debe tener rol {$role}.",
+            ]);
+        }
     }
 }

@@ -25,47 +25,57 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class="mb-8 text-center">
+        <span class="inline-flex rounded-full bg-violet-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-violet-700">Acceso seguro</span>
+        <h2 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">Bienvenido de nuevo</h2>
+        <p class="mt-2 text-sm font-medium text-slate-500">Inicia sesión para gestionar la agenda clínica.</p>
+    </div>
 
-    <form wire:submit="login">
-        <!-- Email Address -->
+    <x-auth-session-status class="mb-5" :status="session('status')" />
+
+    <form wire:submit="login" class="space-y-5">
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="form.email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('form.email')" class="mt-2" />
+            <x-input-label for="email" value="Correo electrónico" />
+            <div class="relative mt-2">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 7l8 6 8-6"/></svg>
+                </span>
+                <x-text-input wire:model="form.email" id="email" class="pl-12" type="email" name="email" required autofocus autocomplete="username" placeholder="nombre@clinica.com" />
+            </div>
+            <x-input-error :messages="$errors->get('form.email')" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
+        <div>
+            <x-input-label for="password" value="Contraseña" />
+            <div class="relative mt-2">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 11V8a5 5 0 0110 0v3"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 11h12v9H6z"/></svg>
+                </span>
+                <x-text-input wire:model="form.password" id="password" class="pl-12" type="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+            </div>
+            <x-input-error :messages="$errors->get('form.password')" />
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember" class="inline-flex items-center">
-                <input wire:model="form.remember" id="remember" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+        <div class="flex items-center justify-between">
+            <label for="remember" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <input wire:model="form.remember" id="remember" type="checkbox" class="rounded border-slate-300 text-violet-600 shadow-sm focus:ring-violet-500" name="remember">
+                Recordarme
             </label>
-        </div>
 
-        <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
-                    {{ __('Forgot your password?') }}
+                <a class="text-sm font-bold text-violet-700 transition hover:text-violet-900" href="{{ route('password.request') }}" wire:navigate>
+                    ¿Olvidaste tu contraseña?
                 </a>
             @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
         </div>
+
+        <x-primary-button class="w-full">
+            Entrar al panel
+        </x-primary-button>
+
+        <p class="text-center text-sm font-medium text-slate-500">
+            ¿No tienes cuenta?
+            <a href="{{ route('register') }}" class="font-bold text-violet-700 hover:text-violet-900" wire:navigate>Crear cuenta</a>
+        </p>
     </form>
 </div>

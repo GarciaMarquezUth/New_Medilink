@@ -1,22 +1,93 @@
 <x-app-layout>
-    <div class="py-12 max-w-3xl mx-auto">
-        <div class="bg-white p-6 shadow sm:rounded-lg">
-            <h2 class="text-xl font-bold mb-4">Registrar Paciente</h2>
-            <form action="{{ route('pacientes.store') }}" method="POST">
-                @csrf
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label>Nombre</label><input type="text" name="nombre" class="w-full border rounded p-2" required></div>
-                    <div><label>Apellido</label><input type="text" name="apellido" class="w-full border rounded p-2" required></div>
-                </div>
-                <div class="mt-4"><label>Email</label><input type="email" name="email" class="w-full border rounded p-2" required></div>
-                <div class="mt-4"><label>Teléfono</label><input type="text" name="telefono" class="w-full border rounded p-2" required></div>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div><label>Fecha Nac.</label><input type="date" name="fecha_nacimiento" class="w-full border rounded p-2" required></div>
-                    <div><label>Género</label><input type="text" name="genero" class="w-full border rounded p-2" required></div>
-                </div>
-                <div class="mt-4"><label>Alergias</label><textarea name="alergias" class="w-full border rounded p-2"></textarea></div>
-                <button type="submit" class="mt-4 bg-green-600 text-white px-4 py-2 rounded">Guardar</button>
-            </form>
+    <x-slot name="header">
+        <div>
+            <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Atención clínica</p>
+            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Registrar paciente</h1>
         </div>
-    </div>
+    </x-slot>
+
+    <form action="{{ route('pacientes.store') }}" method="POST" class="mx-auto max-w-4xl space-y-6">
+        @csrf
+
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 sm:p-8">
+            <div class="mb-6">
+                <h2 class="text-lg font-extrabold text-slate-950">Datos personales</h2>
+                <p class="mt-1 text-sm font-medium text-slate-500">Registra información básica, contacto y datos médicos iniciales.</p>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <x-input-label for="nombre" value="Nombre" />
+                    <x-text-input id="nombre" name="nombre" value="{{ old('nombre') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('nombre')" />
+                </div>
+
+                <div>
+                    <x-input-label for="apellido" value="Apellido" />
+                    <x-text-input id="apellido" name="apellido" value="{{ old('apellido') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('apellido')" />
+                </div>
+
+                <div>
+                    <x-input-label for="email" value="Correo electrónico" />
+                    <x-text-input id="email" type="email" name="email" value="{{ old('email') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('email')" />
+                </div>
+
+                <div>
+                    <x-input-label for="telefono" value="Teléfono" />
+                    <x-text-input id="telefono" name="telefono" value="{{ old('telefono') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('telefono')" />
+                </div>
+
+                <div>
+                    <x-input-label for="fecha_nacimiento" value="Fecha de nacimiento" />
+                    <x-text-input id="fecha_nacimiento" type="date" name="fecha_nacimiento" value="{{ old('fecha_nacimiento') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('fecha_nacimiento')" />
+                </div>
+
+                <div>
+                    <x-input-label for="genero" value="Género" />
+                    <x-text-input id="genero" name="genero" value="{{ old('genero') }}" class="mt-2" required />
+                    <x-input-error :messages="$errors->get('genero')" />
+                </div>
+
+                <div>
+                    <x-input-label for="tipo_sangre" value="Tipo de sangre" />
+                    <x-text-input id="tipo_sangre" name="tipo_sangre" value="{{ old('tipo_sangre') }}" class="mt-2" />
+                    <x-input-error :messages="$errors->get('tipo_sangre')" />
+                </div>
+
+                <div>
+                    <x-input-label for="user_id" value="Usuario vinculado" />
+                    <select id="user_id" name="user_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10">
+                        <option value="">Sin usuario vinculado</option>
+                        @foreach($usuariosPacientes as $usuario)
+                            <option value="{{ $usuario->id }}" {{ (int) old('user_id') === $usuario->id ? 'selected' : '' }}>
+                                {{ $usuario->name }} - {{ $usuario->email }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('user_id')" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <x-input-label for="direccion" value="Dirección" />
+                    <textarea id="direccion" name="direccion" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10">{{ old('direccion') }}</textarea>
+                    <x-input-error :messages="$errors->get('direccion')" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <x-input-label for="alergias" value="Alergias" />
+                    <textarea id="alergias" name="alergias" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10">{{ old('alergias') }}</textarea>
+                    <x-input-error :messages="$errors->get('alergias')" />
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <a href="{{ route('pacientes.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Cancelar</a>
+            <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">Guardar paciente</button>
+        </div>
+    </form>
 </x-app-layout>
