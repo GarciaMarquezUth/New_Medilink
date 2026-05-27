@@ -148,3 +148,9 @@
     </script>
 </body>
 </html>
+<!-- En el formulario de login -->
+<div class="flex justify-end">
+    <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:text-blue-700 hover:underline">
+        ¿Olvidaste tu contraseña?
+    </a>
+</div>

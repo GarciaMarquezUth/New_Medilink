@@ -46,3 +46,21 @@ class User extends Authenticatable
         ];
     }
 }
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
+
+class User extends Authenticatable
+{
+    use Notifiable;
+
+    // ... resto del código
+
+    // Enviar notificación de restablecimiento de contraseña
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
+}
