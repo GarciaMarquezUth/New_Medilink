@@ -27,22 +27,16 @@ require __DIR__.'/auth.php';
 
 use App\Http\Controllers\Auth\LoginController;
 
-
+// Rutas de login
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
-
-Route::get('/password/reset', function () {
-    return view('auth.passwords.reset');
-})->name('password.request');
-
-// Rutas protegidas (requieren autenticación)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+// Ruta temporal
+Route::get('/', function () {
+    return redirect()->route('login');
 });
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware('auth')->name('dashboard');
