@@ -17,7 +17,6 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/portal-paciente/citas', [PortalCitaController::class, 'index'])->name('portal.citas.index');
-Route::post('/portal-paciente/citas', [PortalCitaController::class, 'store'])->name('portal.citas.store');
 
 // Grupo de rutas protegidas
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -2,54 +2,61 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\PortalAppointmentScheduler;
 use App\Models\Cita;
 use App\Models\Disponibilidad;
 use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Servicio;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class PortalCitaTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_patient_portal_shows_available_slots(): void
+    public function test_patient_portal_page_loads_live_scheduler(): void
+    {
+        $this->get(route('portal.citas.index'))
+            ->assertOk()
+            ->assertSeeLivewire(PortalAppointmentScheduler::class);
+    }
+
+    public function test_live_scheduler_shows_available_slots(): void
     {
         $medico = $this->createMedico();
         $servicio = $this->createServicio();
         $this->createDisponibilidad($medico);
 
-        $response = $this->get(route('portal.citas.index', [
-            'medico_id' => $medico->id,
-            'servicio_id' => $servicio->id,
-            'fecha' => '2026-06-01',
-        ]));
-
-        $response
-            ->assertOk()
+        Livewire::test(PortalAppointmentScheduler::class)
+            ->set('medicoId', $medico->id)
+            ->set('servicioId', $servicio->id)
+            ->set('fecha', '2026-06-01')
             ->assertSee('09:00 - 09:30')
             ->assertSee('Solicitar cita');
     }
 
-    public function test_patient_can_request_appointment_from_public_portal(): void
+    public function test_patient_can_request_appointment_from_live_scheduler(): void
     {
         $medico = $this->createMedico();
         $servicio = $this->createServicio();
         $this->createDisponibilidad($medico);
 
-        $this->post(route('portal.citas.store'), [
-            'medico_id' => $medico->id,
-            'servicio_id' => $servicio->id,
-            'fecha_hora' => '2026-06-01T09:00',
-            'nombre' => 'Paciente',
-            'apellido' => 'Portal',
-            'fecha_nacimiento' => '1992-05-10',
-            'genero' => 'No especificado',
-            'email' => 'paciente.portal@example.com',
-            'telefono' => '555-2026',
-            'motivo' => 'Consulta desde portal',
-        ])->assertRedirect(route('portal.citas.index'));
+        Livewire::test(PortalAppointmentScheduler::class)
+            ->set('medicoId', $medico->id)
+            ->set('servicioId', $servicio->id)
+            ->set('fecha', '2026-06-01')
+            ->set('fechaHora', '2026-06-01T09:00')
+            ->set('nombre', 'Paciente')
+            ->set('apellido', 'Portal')
+            ->set('fechaNacimiento', '1992-05-10')
+            ->set('genero', 'No especificado')
+            ->set('email', 'paciente.portal@example.com')
+            ->set('telefono', '555-2026')
+            ->set('motivo', 'Consulta desde portal')
+            ->call('submit')
+            ->assertHasNoErrors();
 
         $paciente = Paciente::where('email', 'paciente.portal@example.com')->firstOrFail();
 
@@ -62,7 +69,7 @@ class PortalCitaTest extends TestCase
         ]);
     }
 
-    public function test_patient_portal_hides_occupied_slots(): void
+    public function test_live_scheduler_hides_occupied_slots(): void
     {
         $medico = $this->createMedico();
         $servicio = $this->createServicio(60);
@@ -78,14 +85,10 @@ class PortalCitaTest extends TestCase
             'estado' => 'agendada',
         ]);
 
-        $response = $this->get(route('portal.citas.index', [
-            'medico_id' => $medico->id,
-            'servicio_id' => $servicio->id,
-            'fecha' => '2026-06-01',
-        ]));
-
-        $response
-            ->assertOk()
+        Livewire::test(PortalAppointmentScheduler::class)
+            ->set('medicoId', $medico->id)
+            ->set('servicioId', $servicio->id)
+            ->set('fecha', '2026-06-01')
             ->assertDontSee('09:00 - 10:00')
             ->assertSee('10:00 - 11:00');
     }

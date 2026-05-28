@@ -210,7 +210,8 @@ Se agrego el portal publico en:
 El paciente puede:
 
 - seleccionar medico, servicio y fecha;
-- ver horarios disponibles calculados con `AppointmentAvailabilityService`;
+- ver horarios disponibles en vivo con Livewire, sin recargar la pagina;
+- consultar slots calculados con `AppointmentAvailabilityService`;
 - elegir un horario libre;
 - capturar sus datos personales y motivo de consulta;
 - enviar la solicitud para crear o actualizar su registro de paciente y agendar la cita.
@@ -219,7 +220,9 @@ El portal reutiliza la misma validacion de disponibilidad del dashboard, por lo 
 
 **Archivos modificados**
 
+- `app/Livewire/PortalAppointmentScheduler.php`
 - `app/Http/Controllers/PortalCitaController.php`
 - `resources/views/portal/citas.blade.php`
+- `resources/views/livewire/portal-appointment-scheduler.blade.php`
 - `routes/web.php`
 - `tests/Feature/PortalCitaTest.php`

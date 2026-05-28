@@ -74,7 +74,7 @@ Los pacientes pueden solicitar citas desde el portal publico:
 /portal-paciente/citas
 ```
 
-Desde esa vista seleccionan medico, servicio y fecha para consultar horarios disponibles antes de enviar sus datos.
+Desde esa vista seleccionan medico, servicio y fecha. Livewire actualiza los horarios disponibles en vivo sin recargar la pagina antes de enviar sus datos.
 
 Las citas usan estos estados:
 
