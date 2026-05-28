@@ -44,6 +44,19 @@
                     <x-input-error :messages="$errors->get('medico_id')" />
                 </div>
 
+                <div class="sm:col-span-2">
+                    <x-input-label for="servicio_id" value="Servicio" />
+                    <select id="servicio_id" name="servicio_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
+                        <option value="">Selecciona un servicio</option>
+                        @foreach($servicios as $servicio)
+                            <option value="{{ $servicio->id }}" {{ (int) old('servicio_id', $cita->servicio_id) === $servicio->id ? 'selected' : '' }}>
+                                {{ $servicio->nombre }} · {{ $servicio->duracion_minutos }} min
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('servicio_id')" />
+                </div>
+
                 <div>
                     <x-input-label for="fecha_hora" value="Fecha y hora" />
                     <x-text-input id="fecha_hora" type="datetime-local" name="fecha_hora" value="{{ old('fecha_hora', $cita->fecha_hora ? \Illuminate\Support\Carbon::parse($cita->fecha_hora)->format('Y-m-d\TH:i') : '') }}" class="mt-2" required />
@@ -53,11 +66,11 @@
                 <div>
                     <x-input-label for="estado" value="Estado" />
                     <select id="estado" name="estado" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
-                        <option value="pendiente" {{ old('estado', $cita->estado) === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        <option value="agendada" {{ old('estado', $cita->estado) === 'agendada' ? 'selected' : '' }}>Agendada</option>
                         <option value="confirmada" {{ old('estado', $cita->estado) === 'confirmada' ? 'selected' : '' }}>Confirmada</option>
                         <option value="cancelada" {{ old('estado', $cita->estado) === 'cancelada' ? 'selected' : '' }}>Cancelada</option>
                         <option value="atendida" {{ old('estado', $cita->estado) === 'atendida' ? 'selected' : '' }}>Atendida</option>
-                        <option value="no_presentada" {{ old('estado', $cita->estado) === 'no_presentada' ? 'selected' : '' }}>No presentada</option>
+                        <option value="no_show" {{ old('estado', $cita->estado) === 'no_show' ? 'selected' : '' }}>No presentada</option>
                     </select>
                     <x-input-error :messages="$errors->get('estado')" />
                 </div>

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Disponibilidad extends Model
 {
+    protected $table = 'disponibilidades';
+
     protected $fillable = [
         'medico_id',
         'dia_semana',

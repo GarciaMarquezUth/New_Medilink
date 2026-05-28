@@ -46,10 +46,19 @@
                             @php
                                 $estadoClasses = match ($cita->estado) {
                                     'atendida' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-                                    'no_presentada' => 'bg-orange-50 text-orange-700 ring-orange-100',
+                                    'no_show' => 'bg-orange-50 text-orange-700 ring-orange-100',
                                     'cancelada' => 'bg-rose-50 text-rose-700 ring-rose-100',
                                     'confirmada' => 'bg-blue-50 text-blue-700 ring-blue-100',
                                     default => 'bg-amber-50 text-amber-700 ring-amber-100',
+                                };
+
+                                $estadoLabel = match ($cita->estado) {
+                                    'agendada' => 'Agendada',
+                                    'confirmada' => 'Confirmada',
+                                    'cancelada' => 'Cancelada',
+                                    'atendida' => 'Atendida',
+                                    'no_show' => 'No presentada',
+                                    default => ucfirst(str_replace('_', ' ', $cita->estado)),
                                 };
                             @endphp
                             <tr class="transition hover:bg-violet-50/40">
@@ -59,13 +68,16 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-700">
                                     {{ $cita->medico->nombre }} {{ $cita->medico->apellido }}
+                                    @if($cita->servicio)
+                                        <p class="text-xs font-medium text-slate-500">{{ $cita->servicio->nombre }}</p>
+                                    @endif
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-600">
                                     {{ \Illuminate\Support\Carbon::parse($cita->fecha_hora)->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold capitalize ring-1 {{ $estadoClasses }}">
-                                        {{ str_replace('_', ' ', $cita->estado) }}
+                                        {{ $estadoLabel }}
                                     </span>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
@@ -80,7 +92,7 @@
                                         @endhasanyrole
 
                                         @role('medico')
-                                            @if($cita->estado === 'pendiente')
+                                            @if(in_array($cita->estado, ['agendada', 'confirmada'], true))
                                                 <form action="{{ route('citas.atendida', $cita->id) }}" method="POST">
                                                     @csrf
                                                     <button class="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">Atendida</button>

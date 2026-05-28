@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Cita;
+use App\Models\Disponibilidad;
 use App\Models\Medico;
 use App\Models\Paciente;
+use App\Models\Servicio;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -79,7 +81,7 @@ class RoleAccessTest extends TestCase
 
         $this->assertDatabaseHas('citas', [
             'id' => $citaNoPresentada->id,
-            'estado' => 'no_presentada',
+            'estado' => 'no_show',
         ]);
     }
 
@@ -107,11 +109,14 @@ class RoleAccessTest extends TestCase
         $recepcionista = $this->userWithRole('recepcionista');
         $medico = $this->createMedico('Doctor Gestion');
         $paciente = $this->createPaciente('Paciente Gestion');
+        $servicio = $this->createServicio();
+        $this->createDisponibilidad($medico);
 
         $this->actingAs($admin)
             ->post(route('citas.store'), [
                 'medico_id' => $medico->id,
                 'paciente_id' => $paciente->id,
+                'servicio_id' => $servicio->id,
                 'fecha_hora' => '2026-06-01T09:00',
                 'motivo' => 'Consulta inicial',
             ])
@@ -123,6 +128,7 @@ class RoleAccessTest extends TestCase
             ->put(route('citas.update', $cita->id), [
                 'medico_id' => $medico->id,
                 'paciente_id' => $paciente->id,
+                'servicio_id' => $servicio->id,
                 'fecha_hora' => '2026-06-02T10:30',
                 'motivo' => 'Consulta reagendada',
                 'estado' => 'cancelada',
@@ -134,6 +140,38 @@ class RoleAccessTest extends TestCase
             'motivo' => 'Consulta reagendada',
             'estado' => 'cancelada',
         ]);
+    }
+
+    public function test_admin_cannot_schedule_overlapping_citas_for_same_medico(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Sin Choques');
+        $paciente = $this->createPaciente('Paciente Uno');
+        $otroPaciente = $this->createPaciente('Paciente Dos');
+        $servicio = $this->createServicio(60);
+        $this->createDisponibilidad($medico);
+
+        $this->actingAs($admin)
+            ->post(route('citas.store'), [
+                'medico_id' => $medico->id,
+                'paciente_id' => $paciente->id,
+                'servicio_id' => $servicio->id,
+                'fecha_hora' => '2026-06-01T09:00',
+                'motivo' => 'Consulta inicial',
+            ])
+            ->assertRedirect(route('citas.index'));
+
+        $this->actingAs($admin)
+            ->post(route('citas.store'), [
+                'medico_id' => $medico->id,
+                'paciente_id' => $otroPaciente->id,
+                'servicio_id' => $servicio->id,
+                'fecha_hora' => '2026-06-01T09:30',
+                'motivo' => 'Consulta superpuesta',
+            ])
+            ->assertSessionHasErrors('fecha_hora');
+
+        $this->assertSame(1, Cita::count());
     }
 
     private function userWithRole(string $role): User
@@ -156,7 +194,7 @@ class RoleAccessTest extends TestCase
             'paciente_id' => $paciente->id,
             'fecha_hora' => '2026-06-01 09:00:00',
             'motivo' => 'Consulta',
-            'estado' => 'pendiente',
+            'estado' => 'agendada',
         ]);
     }
 
@@ -181,6 +219,28 @@ class RoleAccessTest extends TestCase
             'genero' => 'N/A',
             'email' => fake()->unique()->safeEmail(),
             'telefono' => '555-1111',
+        ]);
+    }
+
+    private function createServicio(int $duracion = 30): Servicio
+    {
+        return Servicio::create([
+            'nombre' => 'Consulta general '.$duracion,
+            'descripcion' => 'Servicio de prueba',
+            'duracion_minutos' => $duracion,
+            'precio' => 500,
+            'activo' => true,
+        ]);
+    }
+
+    private function createDisponibilidad(Medico $medico): Disponibilidad
+    {
+        return Disponibilidad::create([
+            'medico_id' => $medico->id,
+            'dia_semana' => 1,
+            'hora_inicio' => '09:00',
+            'hora_fin' => '17:00',
+            'activo' => true,
         ]);
     }
 }

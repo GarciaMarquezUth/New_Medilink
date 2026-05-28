@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Servicio;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -38,6 +39,22 @@ class DatabaseSeeder extends Seeder
             );
 
             $user->syncRoles([$data['role']]);
+        }
+
+        foreach ([
+            ['nombre' => 'Consulta general', 'duracion_minutos' => 30, 'precio' => 500],
+            ['nombre' => 'Consulta especializada', 'duracion_minutos' => 45, 'precio' => 750],
+            ['nombre' => 'Control de seguimiento', 'duracion_minutos' => 20, 'precio' => 350],
+        ] as $servicio) {
+            Servicio::updateOrCreate(
+                ['nombre' => $servicio['nombre']],
+                [
+                    'descripcion' => 'Servicio clínico disponible para agenda.',
+                    'duracion_minutos' => $servicio['duracion_minutos'],
+                    'precio' => $servicio['precio'],
+                    'activo' => true,
+                ],
+            );
         }
     }
 }

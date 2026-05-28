@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('citas', function (Blueprint $table) {
             $table->id();
-            
+
             // Relaciones
             $table->foreignId('medico_id')->constrained('medicos')->onDelete('cascade');
             $table->foreignId('paciente_id')->constrained('pacientes')->onDelete('cascade');
-            
+
             // Datos de la cita
             $table->dateTime('fecha_hora');
             $table->string('motivo');
-            $table->string('estado')->default('pendiente');
-            
+            $table->string('estado')->default('agendada');
+
             $table->timestamps();
         });
     }

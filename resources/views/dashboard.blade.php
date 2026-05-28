@@ -2,7 +2,7 @@
     $totalMedicos = \App\Models\Medico::count();
     $totalPacientes = \App\Models\Paciente::count();
     $totalCitas = \App\Models\Cita::count();
-    $citasPendientes = \App\Models\Cita::where('estado', 'pendiente')->count();
+    $citasPendientes = \App\Models\Cita::whereIn('estado', ['agendada', 'confirmada'])->count();
 @endphp
 
 <x-app-layout>
@@ -94,7 +94,7 @@
                     <span class="rounded-2xl bg-amber-50 p-3 text-amber-700">
                         <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Pendientes</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Agendadas</span>
                 </div>
                 <p class="mt-5 text-sm font-bold text-slate-500">Por atender</p>
                 <p class="mt-1 text-3xl font-extrabold text-slate-950">{{ $citasPendientes }}</p>
