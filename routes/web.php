@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\PortalCitaController;
 use Illuminate\Support\Facades\Route;
 
 // Redirección inicial
@@ -14,6 +15,9 @@ Route::get('/', function () {
 // Rutas de autenticación
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/portal-paciente/citas', [PortalCitaController::class, 'index'])->name('portal.citas.index');
+Route::post('/portal-paciente/citas', [PortalCitaController::class, 'store'])->name('portal.citas.store');
 
 // Grupo de rutas protegidas
 Route::middleware(['auth', 'verified'])->group(function () {

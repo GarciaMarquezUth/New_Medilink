@@ -68,6 +68,14 @@ Tambien crea servicios clinicos base para poder agendar citas.
 
 ## Flujo de citas
 
+Los pacientes pueden solicitar citas desde el portal publico:
+
+```text
+/portal-paciente/citas
+```
+
+Desde esa vista seleccionan medico, servicio y fecha para consultar horarios disponibles antes de enviar sus datos.
+
 Las citas usan estos estados:
 
 - `agendada`

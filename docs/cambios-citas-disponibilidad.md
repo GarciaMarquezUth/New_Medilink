@@ -192,3 +192,34 @@ Con estos cambios el modulo de citas queda mas consistente:
 - mantiene estados uniformes;
 - documenta MySQL como base real del proyecto;
 - deja CI preparado para validar contra MySQL.
+
+## 9. Portal publico para pacientes
+
+**Necesidad**
+
+El proyecto necesitaba una vista publica donde el paciente pueda solicitar su cita en linea y consultar los huecos disponibles sin entrar al dashboard interno.
+
+**Solucion implementada**
+
+Se agrego el portal publico en:
+
+```text
+/portal-paciente/citas
+```
+
+El paciente puede:
+
+- seleccionar medico, servicio y fecha;
+- ver horarios disponibles calculados con `AppointmentAvailabilityService`;
+- elegir un horario libre;
+- capturar sus datos personales y motivo de consulta;
+- enviar la solicitud para crear o actualizar su registro de paciente y agendar la cita.
+
+El portal reutiliza la misma validacion de disponibilidad del dashboard, por lo que no permite reservar horarios fuera de disponibilidad ni horarios traslapados.
+
+**Archivos modificados**
+
+- `app/Http/Controllers/PortalCitaController.php`
+- `resources/views/portal/citas.blade.php`
+- `routes/web.php`
+- `tests/Feature/PortalCitaTest.php`

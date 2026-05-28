@@ -67,7 +67,7 @@ class AppointmentAvailabilityService
                 $inicio = $cursor->copy();
                 $fin = $inicio->copy()->addMinutes($servicio->duracion_minutos);
 
-                if (! $this->hasOverlap($medicoId, $inicio, $fin, $ignoreCitaId)) {
+                if (! $inicio->isPast() && ! $this->hasOverlap($medicoId, $inicio, $fin, $ignoreCitaId)) {
                     $slots[$inicio->format('Y-m-d\TH:i')] = [
                         'value' => $inicio->format('Y-m-d\TH:i'),
                         'label' => $inicio->format('H:i'),
