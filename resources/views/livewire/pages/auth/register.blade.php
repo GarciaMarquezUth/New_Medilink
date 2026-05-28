@@ -36,7 +36,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         Auth::login($user);
 
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
 
@@ -46,6 +46,14 @@ new #[Layout('layouts.guest')] class extends Component
         <h2 class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">Crea tu acceso</h2>
         <p class="mt-2 text-sm font-medium text-slate-500">Regístrate para consultar y gestionar información clínica.</p>
     </div>
+
+    <x-auth-session-status class="mb-5" :status="session('status')" />
+
+    @if (session('portal_cita_pendiente'))
+        <div class="mb-5 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-800">
+            Inicia sesión o regístrate para confirmar tu cita.
+        </div>
+    @endif
 
     <form wire:submit="register" class="space-y-5">
         <div>

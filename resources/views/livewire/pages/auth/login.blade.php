@@ -33,6 +33,12 @@ new #[Layout('layouts.guest')] class extends Component
 
     <x-auth-session-status class="mb-5" :status="session('status')" />
 
+    @if (session('portal_cita_pendiente'))
+        <div class="mb-5 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-800">
+            Inicia sesión o regístrate para confirmar tu cita.
+        </div>
+    @endif
+
     <form wire:submit="login" class="space-y-5">
         <div>
             <x-input-label for="email" value="Correo electrónico" />

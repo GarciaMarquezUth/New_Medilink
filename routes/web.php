@@ -5,6 +5,7 @@ use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\PortalCitaController;
 use App\Http\Controllers\ServicioController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,14 @@ Route::get('/', function () {
 // Rutas de autenticación
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Portal publico para solicitud de citas
+Route::get('/portal-citas', [PortalCitaController::class, 'create'])->name('portal-citas.index');
+Route::post('/portal-citas', [PortalCitaController::class, 'store'])->name('portal-citas.store');
+Route::middleware('auth')->group(function () {
+    Route::get('/portal-citas/confirmar', [PortalCitaController::class, 'confirm'])->name('portal-citas.confirm');
+    Route::post('/portal-citas/confirmar', [PortalCitaController::class, 'confirmStore'])->name('portal-citas.confirm.store');
+});
 
 // Grupo de rutas protegidas
 Route::middleware(['auth', 'verified'])->group(function () {
