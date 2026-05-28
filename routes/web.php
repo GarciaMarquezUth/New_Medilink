@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // Redirección inicial
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect()->route('portal-citas.index');
 });
 
 // Rutas de autenticación
@@ -59,6 +59,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::match(['put', 'patch'], 'citas/{cita}', [CitaController::class, 'update'])->name('citas.update');
             Route::delete('citas/{cita}', [CitaController::class, 'destroy'])->name('citas.destroy');
         });
+
+        Route::post('citas/{cita}/cancelar', [CitaController::class, 'cancelarPaciente'])
+            ->name('citas.cancelar-paciente')
+            ->middleware('role:paciente');
 
         // --- RUTAS PERSONALIZADAS PARA EL MÉDICO ---
         // Estas van dentro del grupo dashboard para mantener el prefijo

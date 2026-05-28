@@ -74,10 +74,6 @@ class PatientPortalTest extends TestCase
             'servicio_id' => $servicio->id,
             'fecha' => '2026-06-01',
             'horario' => '2026-06-01T09:00',
-            'nombre' => 'Paciente',
-            'apellido' => 'Portal',
-            'email' => 'portal@example.com',
-            'telefono' => '555-2222',
             'motivo' => 'Consulta desde portal',
         ])->assertRedirect(route('portal-citas.index'));
 
@@ -85,7 +81,7 @@ class PatientPortalTest extends TestCase
             'nombre' => 'Paciente',
             'apellido' => 'Portal',
             'email' => 'portal@example.com',
-            'telefono' => '555-2222',
+            'telefono' => '',
             'user_id' => $user->id,
         ]);
 
@@ -114,10 +110,6 @@ class PatientPortalTest extends TestCase
             'servicio_id' => $servicio->id,
             'fecha' => '2026-06-01',
             'horario' => '2026-06-01T10:00',
-            'nombre' => 'Nombre Nuevo',
-            'apellido' => 'Apellido Nuevo',
-            'email' => 'existente@example.com',
-            'telefono' => '555-9999',
             'motivo' => 'Consulta para paciente existente',
         ])->assertRedirect(route('portal-citas.index'));
 
@@ -130,6 +122,31 @@ class PatientPortalTest extends TestCase
             'paciente_id' => $paciente->id,
             'fecha_hora' => '2026-06-01 10:00:00',
         ]);
+    }
+
+    public function test_authenticated_patient_portal_hides_manual_patient_fields(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Paciente Visual',
+            'email' => 'visual@example.com',
+        ]);
+        $medico = $this->createMedico('Doctor Visual');
+        $servicio = $this->createServicio(30);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($user)
+            ->get(route('portal-citas.index', [
+                'medico_id' => $medico->id,
+                'servicio_id' => $servicio->id,
+                'fecha' => '2026-06-01',
+            ]))
+            ->assertOk()
+            ->assertSee('Usaremos los datos de tu cuenta para registrar la cita.')
+            ->assertSee('Motivo de consulta')
+            ->assertDontSee('name="nombre"', false)
+            ->assertDontSee('name="apellido"', false)
+            ->assertDontSee('name="email"', false)
+            ->assertDontSee('name="telefono"', false);
     }
 
     public function test_pending_guest_appointment_can_be_confirmed_after_login(): void

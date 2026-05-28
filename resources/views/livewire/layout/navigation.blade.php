@@ -54,9 +54,16 @@ new class extends Component
                 </a>
             @endhasanyrole
 
+            @role('paciente')
+                <a href="{{ route('portal-citas.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition text-slate-600 hover:bg-violet-50 hover:text-violet-700">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+                    Agendar cita
+                </a>
+            @endrole
+
             <a href="{{ route('citas.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
-                Citas
+                @role('paciente') Mis citas @else Citas @endrole
             </a>
         </nav>
 
@@ -101,7 +108,11 @@ new class extends Component
                     <x-responsive-nav-link :href="route('disponibilidades.index')" :active="request()->routeIs('disponibilidades.*')" wire:navigate>Disponibilidad</x-responsive-nav-link>
                 @endhasanyrole
 
-                <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>Citas</x-responsive-nav-link>
+                @role('paciente')
+                    <x-responsive-nav-link :href="route('portal-citas.index')" :active="request()->routeIs('portal-citas.*')">Agendar cita</x-responsive-nav-link>
+                @endrole
+
+                <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>@role('paciente') Mis citas @else Citas @endrole</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('profile')" :active="request()->routeIs('profile')" wire:navigate>Perfil</x-responsive-nav-link>
             </div>
 

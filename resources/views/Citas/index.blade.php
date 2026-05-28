@@ -11,6 +11,12 @@
                     Nueva cita
                 </a>
             @endhasanyrole
+            @role('paciente')
+                <a href="{{ route('portal-citas.index') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
+                    Agendar cita
+                </a>
+            @endrole
         </div>
     </x-slot>
 
@@ -18,6 +24,12 @@
         @if(session('success'))
             <div class="rounded-3xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700 shadow-sm">
                 {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="rounded-3xl border border-rose-100 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 shadow-sm">
+                {{ session('error') }}
             </div>
         @endif
 
@@ -100,6 +112,17 @@
                                                 </form>
                                             @else
                                                 <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">Finalizada</span>
+                                            @endif
+                                        @endrole
+
+                                        @role('paciente')
+                                            @if(in_array($cita->estado, $estadosOcupantes, true) && \Illuminate\Support\Carbon::parse($cita->fecha_hora)->isFuture())
+                                                <form action="{{ route('citas.cancelar-paciente', $cita->id) }}" method="POST">
+                                                    @csrf
+                                                    <button class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100" onclick="return confirm('¿Cancelar esta cita?')">Cancelar</button>
+                                                </form>
+                                            @else
+                                                <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">No cancelable</span>
                                             @endif
                                         @endrole
                                     </div>

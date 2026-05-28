@@ -95,8 +95,8 @@
                         <div class="flex items-start gap-3">
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-base font-black text-violet-700">3</span>
                             <div>
-                                <h2 class="text-base font-black text-slate-950">Ingresa tus datos</h2>
-                                <p class="mt-1 text-sm font-medium leading-5 text-slate-500">Completa tu información y confirma la solicitud.</p>
+                                <h2 class="text-base font-black text-slate-950">@auth Confirma tu cita @else Ingresa tus datos @endauth</h2>
+                                <p class="mt-1 text-sm font-medium leading-5 text-slate-500">@auth Escribe el motivo y confirma la solicitud. @else Completa tu información y confirma la solicitud. @endauth</p>
                             </div>
                         </div>
                     </article>
@@ -211,63 +211,71 @@
 
                                 <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                                     <div class="mb-5">
-                                        <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Datos del paciente</p>
-                                        <h2 class="mt-1 text-2xl font-black text-slate-950">Completa tu solicitud</h2>
-                                        <p class="mt-1 text-sm font-medium text-slate-500">Usaremos estos datos para identificarte y contactarte.</p>
+                                        @guest
+                                            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Datos del paciente</p>
+                                            <h2 class="mt-1 text-2xl font-black text-slate-950">Completa tu solicitud</h2>
+                                            <p class="mt-1 text-sm font-medium text-slate-500">Usaremos estos datos para identificarte y contactarte.</p>
+                                        @else
+                                            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Confirmación</p>
+                                            <h2 class="mt-1 text-2xl font-black text-slate-950">Confirma tu solicitud</h2>
+                                            <p class="mt-1 text-sm font-medium text-slate-500">Usaremos los datos de tu cuenta para registrar la cita.</p>
+                                        @endguest
                                     </div>
 
-                                    <div class="grid gap-4 md:grid-cols-2">
-                                        <div>
-                                            <label for="nombre" class="block text-sm font-extrabold text-slate-800">Nombre</label>
-                                            <input id="nombre" type="text" name="nombre" value="{{ old('nombre') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="given-name" required>
-                                            @error('nombre')
-                                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
+                                    @guest
+                                        <div class="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label for="nombre" class="block text-sm font-extrabold text-slate-800">Nombre</label>
+                                                <input id="nombre" type="text" name="nombre" value="{{ old('nombre') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="given-name" required>
+                                                @error('nombre')
+                                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
 
-                                        <div>
-                                            <label for="apellido" class="block text-sm font-extrabold text-slate-800">Apellido</label>
-                                            <input id="apellido" type="text" name="apellido" value="{{ old('apellido') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="family-name" required>
-                                            @error('apellido')
-                                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
+                                            <div>
+                                                <label for="apellido" class="block text-sm font-extrabold text-slate-800">Apellido</label>
+                                                <input id="apellido" type="text" name="apellido" value="{{ old('apellido') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="family-name" required>
+                                                @error('apellido')
+                                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
 
-                                        <div>
-                                            <label for="email" class="block text-sm font-extrabold text-slate-800">Email</label>
-                                            <input id="email" type="email" name="email" value="{{ old('email') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="email" required>
-                                            @error('email')
-                                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
+                                            <div>
+                                                <label for="email" class="block text-sm font-extrabold text-slate-800">Email</label>
+                                                <input id="email" type="email" name="email" value="{{ old('email') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="email" required>
+                                                @error('email')
+                                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
 
-                                        <div>
-                                            <label for="telefono" class="block text-sm font-extrabold text-slate-800">Teléfono</label>
-                                            <input id="telefono" type="tel" name="telefono" value="{{ old('telefono') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="tel" required>
-                                            @error('telefono')
-                                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
+                                            <div>
+                                                <label for="telefono" class="block text-sm font-extrabold text-slate-800">Teléfono</label>
+                                                <input id="telefono" type="tel" name="telefono" value="{{ old('telefono') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="tel" required>
+                                                @error('telefono')
+                                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </div>
                                         </div>
+                                    @endguest
 
-                                        <div class="md:col-span-2">
-                                            <label for="motivo" class="block text-sm font-extrabold text-slate-800">Motivo de consulta</label>
-                                            <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" required>{{ old('motivo') }}</textarea>
-                                            @error('motivo')
-                                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
+                                    <div class="@guest mt-4 @endguest">
+                                        <label for="motivo" class="block text-sm font-extrabold text-slate-800">Motivo de consulta</label>
+                                        <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" required>{{ old('motivo') }}</textarea>
+                                        @error('motivo')
+                                            <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <div class="mt-5 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
                                         @guest
                                             Inicia sesión o regístrate para confirmar tu cita. Guardaremos temporalmente esta selección mientras accedes.
                                         @else
-                                            Tu solicitud quedará registrada como cita agendada. La clínica podrá revisar y confirmar el seguimiento.
+                                            Usaremos los datos de tu cuenta para registrar la cita. Solo confirma el motivo de consulta y envía la solicitud.
                                         @endguest
                                     </div>
 
                                     <button type="submit" class="mt-5 inline-flex w-full select-none items-center justify-center rounded-2xl bg-violet-700 px-6 py-3.5 text-base font-black text-white shadow-lg shadow-violet-700/20 transition hover:-translate-y-0.5 hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200">
-                                        Solicitar cita
+                                        @auth Confirmar cita @else Solicitar cita @endauth
                                     </button>
                                 </div>
                             </form>

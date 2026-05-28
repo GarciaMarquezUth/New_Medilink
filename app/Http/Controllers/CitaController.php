@@ -169,6 +169,21 @@ class CitaController extends Controller
         return redirect()->route('citas.index')->with('success', 'Cita marcada como no presentada.');
     }
 
+    public function cancelarPaciente(Cita $cita): RedirectResponse
+    {
+        $cita->load('paciente');
+
+        $this->authorizePacienteCita($cita);
+
+        if (! in_array($cita->estado, Cita::estadosOcupantes(), true) || $cita->fecha_hora->isPast()) {
+            return back()->with('error', 'Esta cita ya no puede cancelarse desde el portal del paciente.');
+        }
+
+        $cita->update(['estado' => Cita::ESTADO_CANCELADA]);
+
+        return back()->with('success', 'Cita cancelada correctamente.');
+    }
+
     private function authorizeCitaManagement(): void
     {
         /** @var User|null $user */
@@ -185,6 +200,16 @@ class CitaController extends Controller
         $user = Auth::user();
 
         if (! $user || ! $user->hasRole('medico') || $cita->medico?->user_id !== $user->id) {
+            abort(403, 'No autorizado.');
+        }
+    }
+
+    private function authorizePacienteCita(Cita $cita): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (! $user || ! $user->hasRole('paciente') || $cita->paciente?->user_id !== $user->id) {
             abort(403, 'No autorizado.');
         }
     }

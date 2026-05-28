@@ -60,6 +60,34 @@ class RoleAccessTest extends TestCase
             ->assertDontSee('Paciente Ajeno');
     }
 
+    public function test_medico_dashboard_only_shows_own_clinical_data(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $otroMedicoUser = $this->userWithRole('medico');
+
+        $this->createCitaForMedico('Paciente Propio', 'Doctor Propio', $medicoUser);
+        $this->createCitaForMedico('Paciente Ajeno', 'Doctor Ajeno', $otroMedicoUser);
+
+        $response = $this->actingAs($medicoUser)->get(route('dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Panel médico')
+            ->assertSee('Citas de hoy')
+            ->assertSee('Próximas citas')
+            ->assertSee('Pendientes por atender')
+            ->assertSee('Citas atendidas')
+            ->assertSee('Mis pacientes')
+            ->assertSee('Paciente Propio')
+            ->assertDontSee('Paciente Ajeno')
+            ->assertDontSee('Estado del sistema')
+            ->assertDontSee('Nuevo médico')
+            ->assertDontSee('Nuevo paciente')
+            ->assertDontSee('Nuevo servicio')
+            ->assertDontSee('Médicos</p>', false)
+            ->assertDontSee('Pacientes</p>', false);
+    }
+
     public function test_medico_can_mark_own_citas_as_atendida_or_no_presentada(): void
     {
         $medicoUser = $this->userWithRole('medico');
@@ -101,6 +129,85 @@ class RoleAccessTest extends TestCase
         $this->actingAs($medicoUser)
             ->delete(route('citas.destroy', $cita->id))
             ->assertForbidden();
+    }
+
+    public function test_paciente_dashboard_only_shows_patient_content_and_own_citas(): void
+    {
+        $pacienteUser = $this->userWithRole('paciente');
+        $otroPacienteUser = $this->userWithRole('paciente');
+        $paciente = $this->createPaciente('Paciente Propio', $pacienteUser);
+        $otroPaciente = $this->createPaciente('Paciente Ajeno', $otroPacienteUser);
+
+        $this->createCitaForPaciente($paciente, 'Consulta Propia');
+        $this->createCitaForPaciente($otroPaciente, 'Consulta Ajena');
+
+        $response = $this->actingAs($pacienteUser)->get(route('dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Portal del paciente')
+            ->assertSee('Consulta Propia')
+            ->assertSee('Agendar cita')
+            ->assertDontSee('Consulta Ajena')
+            ->assertDontSee('Nuevo médico')
+            ->assertDontSee('Nuevo paciente')
+            ->assertDontSee('Disponibilidad médica');
+    }
+
+    public function test_paciente_only_sees_own_citas_and_can_cancel_future_own_cita(): void
+    {
+        $pacienteUser = $this->userWithRole('paciente');
+        $otroPacienteUser = $this->userWithRole('paciente');
+        $paciente = $this->createPaciente('Paciente Propio', $pacienteUser);
+        $otroPaciente = $this->createPaciente('Paciente Ajeno', $otroPacienteUser);
+        $cita = $this->createCitaForPaciente($paciente, 'Consulta Cancelable');
+        $this->createCitaForPaciente($otroPaciente, 'Consulta No Visible');
+
+        $this->actingAs($pacienteUser)
+            ->get(route('citas.index'))
+            ->assertOk()
+            ->assertSee('Consulta Cancelable')
+            ->assertSee('Cancelar')
+            ->assertSee('Agendar cita')
+            ->assertDontSee('Consulta No Visible')
+            ->assertDontSee('Atendida')
+            ->assertDontSee('No presentada')
+            ->assertDontSee('Editar')
+            ->assertDontSee('Eliminar');
+
+        $this->actingAs($pacienteUser)
+            ->post(route('citas.cancelar-paciente', $cita->id))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado' => Cita::ESTADO_CANCELADA,
+        ]);
+    }
+
+    public function test_paciente_cannot_cancel_other_patient_cita_or_use_medico_actions(): void
+    {
+        $pacienteUser = $this->userWithRole('paciente');
+        $otroPacienteUser = $this->userWithRole('paciente');
+        $otroPaciente = $this->createPaciente('Paciente Ajeno', $otroPacienteUser);
+        $citaAjena = $this->createCitaForPaciente($otroPaciente, 'Consulta Ajena');
+
+        $this->actingAs($pacienteUser)
+            ->post(route('citas.cancelar-paciente', $citaAjena->id))
+            ->assertForbidden();
+
+        $this->actingAs($pacienteUser)
+            ->post(route('citas.atendida', $citaAjena->id))
+            ->assertForbidden();
+
+        $this->actingAs($pacienteUser)
+            ->post(route('citas.no-presentada', $citaAjena->id))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $citaAjena->id,
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
     }
 
     public function test_admin_and_recepcionista_can_create_update_and_cancel_citas(): void
@@ -299,7 +406,7 @@ class RoleAccessTest extends TestCase
         ]);
     }
 
-    private function createPaciente(string $nombre): Paciente
+    private function createPaciente(string $nombre, ?User $user = null): Paciente
     {
         return Paciente::create([
             'nombre' => $nombre,
@@ -308,6 +415,19 @@ class RoleAccessTest extends TestCase
             'genero' => 'N/A',
             'email' => fake()->unique()->safeEmail(),
             'telefono' => '555-1111',
+            'user_id' => $user?->id,
+        ]);
+    }
+
+    private function createCitaForPaciente(Paciente $paciente, string $motivo): Cita
+    {
+        return Cita::create([
+            'medico_id' => $this->createMedico('Doctor Paciente')->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $this->createServicio()->id,
+            'fecha_hora' => '2026-06-01 09:00:00',
+            'motivo' => $motivo,
+            'estado' => Cita::ESTADO_AGENDADA,
         ]);
     }
 
