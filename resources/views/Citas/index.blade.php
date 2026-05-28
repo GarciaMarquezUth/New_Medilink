@@ -38,6 +38,9 @@
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Médico</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Fecha</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Estado</th>
+                            @hasanyrole(['admin', 'recepcionista'])
+                                <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Pago</th>
+                            @endhasanyrole
                             <th class="px-6 py-4 text-right text-xs font-extrabold uppercase tracking-wider text-slate-500">Acciones</th>
                         </tr>
                     </thead>
@@ -60,6 +63,8 @@
                                     'no_show' => 'No presentada',
                                     default => ucfirst(str_replace('_', ' ', $cita->estado)),
                                 };
+
+                                $pagoRealizado = $cita->estado_pago === 'pagado';
                             @endphp
                             <tr class="transition hover:bg-violet-50/40">
                                 <td class="whitespace-nowrap px-6 py-4">
@@ -80,9 +85,30 @@
                                         {{ $estadoLabel }}
                                     </span>
                                 </td>
+                                @hasanyrole(['admin', 'recepcionista'])
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold ring-1 {{ $pagoRealizado ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-amber-50 text-amber-700 ring-amber-100' }}">
+                                            {{ $pagoRealizado ? 'Pagado' : 'Pendiente' }}
+                                        </span>
+                                        <p class="mt-1 text-xs font-semibold text-slate-500">
+                                            ${{ number_format((float) ($cita->monto_pagado ?? $cita->servicio?->precio ?? 0), 2) }}
+                                        </p>
+                                    </td>
+                                @endhasanyrole
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
                                     <div class="inline-flex flex-wrap justify-end gap-2">
                                         @hasanyrole(['admin', 'recepcionista'])
+                                            @if($pagoRealizado)
+                                                <form action="{{ route('citas.pago-pendiente', $cita->id) }}" method="POST">
+                                                    @csrf
+                                                    <button class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200">Pago pendiente</button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('citas.pago-realizado', $cita->id) }}" method="POST">
+                                                    @csrf
+                                                    <button class="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">Marcar pagado</button>
+                                                </form>
+                                            @endif
                                             <a href="{{ route('citas.edit', $cita->id) }}" class="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Editar</a>
                                             <form action="{{ route('citas.destroy', $cita->id) }}" method="POST">
                                                 @csrf
@@ -110,7 +136,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="6" class="px-6 py-12 text-center">
                                     <p class="text-sm font-semibold text-slate-500">No hay citas para mostrar.</p>
                                 </td>
                             </tr>

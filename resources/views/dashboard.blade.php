@@ -331,6 +331,85 @@
                 </div>
             </section>
 
+            @if ($showRecepcionPayments)
+                <section class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-sm">
+                            <p class="text-sm font-bold text-amber-700">Pagos pendientes</p>
+                            <p class="mt-2 text-3xl font-extrabold text-amber-950">{{ $totalPagosPendientes }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+                            <p class="text-sm font-bold text-emerald-700">Pagos realizados</p>
+                            <p class="mt-2 text-3xl font-extrabold text-emerald-950">{{ $totalPagosRealizados }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <p class="text-sm font-bold text-slate-500">Cobrado hoy</p>
+                            <p class="mt-2 text-3xl font-extrabold text-slate-950">${{ number_format((float) $montoPagadoHoy, 2) }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-6 xl:grid-cols-2">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-bold text-amber-700">Control de caja</p>
+                                    <h3 class="mt-1 text-xl font-extrabold text-slate-950">Servicios pendientes de pago</h3>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 space-y-3">
+                                @forelse ($pagosPendientes as $cita)
+                                    <div class="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p class="font-bold text-slate-950">{{ $cita->paciente?->nombre }} {{ $cita->paciente?->apellido }}</p>
+                                                <p class="mt-1 text-sm text-slate-600">{{ $cita->servicio?->nombre ?? 'Servicio sin asignar' }} · {{ $formatDate($cita->fecha_hora) }} {{ $formatTime($cita->fecha_hora) }}</p>
+                                                <p class="mt-1 text-sm font-bold text-amber-800">${{ number_format((float) ($cita->servicio?->precio ?? 0), 2) }}</p>
+                                            </div>
+                                            <form method="POST" action="{{ route('citas.pago-realizado', $cita->id) }}">
+                                                @csrf
+                                                <button class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700">Marcar pagado</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-500">No hay pagos pendientes por registrar.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-bold text-emerald-700">Servicios pagados</p>
+                                    <h3 class="mt-1 text-xl font-extrabold text-slate-950">Pagos realizados</h3>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 space-y-3">
+                                @forelse ($pagosRealizados as $cita)
+                                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p class="font-bold text-slate-950">{{ $cita->paciente?->nombre }} {{ $cita->paciente?->apellido }}</p>
+                                                <p class="mt-1 text-sm text-slate-600">{{ $cita->servicio?->nombre ?? 'Servicio sin asignar' }} · {{ $formatDate($cita->fecha_pago) }}</p>
+                                                <p class="mt-1 text-sm font-bold text-emerald-800">${{ number_format((float) $cita->monto_pagado, 2) }}</p>
+                                            </div>
+                                            <form method="POST" action="{{ route('citas.pago-pendiente', $cita->id) }}">
+                                                @csrf
+                                                <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">Revertir</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-500">Aun no hay pagos realizados registrados.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            @endif
+
             <section class="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

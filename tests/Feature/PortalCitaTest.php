@@ -33,6 +33,8 @@ class PortalCitaTest extends TestCase
             ->set('medicoId', $medico->id)
             ->set('servicioId', $servicio->id)
             ->set('fecha', '2026-06-01')
+            ->assertSee('Datos de la cita')
+            ->assertDontSee('Buscar horarios')
             ->assertSee('09:00 - 09:30')
             ->assertSee('Solicitar cita');
     }

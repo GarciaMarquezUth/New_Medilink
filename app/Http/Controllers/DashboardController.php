@@ -33,7 +33,7 @@ class DashboardController extends Controller
             return view('dashboard', $data + $this->pacienteDashboard($user, $today));
         }
 
-        return view('dashboard', $data + $this->operacionDashboard($today));
+        return view('dashboard', $data + $this->operacionDashboard($user, $today));
     }
 
     private function medicoDashboard(User $user, string $today): array
@@ -125,7 +125,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function operacionDashboard(string $today): array
+    private function operacionDashboard(User $user, string $today): array
     {
         $citasHoy = Cita::with(['medico', 'paciente', 'servicio'])
             ->whereDate('fecha_hora', $today)
@@ -133,14 +133,37 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $pagosPendientes = Cita::with(['medico', 'paciente', 'servicio'])
+            ->where('estado_pago', 'pendiente')
+            ->whereIn('estado', ['agendada', 'confirmada', 'atendida'])
+            ->orderBy('fecha_hora')
+            ->limit(6)
+            ->get();
+
+        $pagosRealizados = Cita::with(['medico', 'paciente', 'servicio'])
+            ->where('estado_pago', 'pagado')
+            ->latest('fecha_pago')
+            ->limit(6)
+            ->get();
+
         return [
             'dashboardType' => 'operacion',
+            'showRecepcionPayments' => $user->hasRole('recepcionista'),
             'totalMedicos' => Medico::count(),
             'totalPacientes' => Paciente::count(),
             'totalCitas' => Cita::count(),
             'citasHoy' => $citasHoy,
             'citasPendientes' => Cita::whereIn('estado', ['agendada', 'confirmada'])->count(),
             'citasCanceladasHoy' => Cita::whereDate('fecha_hora', $today)->where('estado', 'cancelada')->count(),
+            'pagosPendientes' => $pagosPendientes,
+            'pagosRealizados' => $pagosRealizados,
+            'totalPagosPendientes' => Cita::where('estado_pago', 'pendiente')
+                ->whereIn('estado', ['agendada', 'confirmada', 'atendida'])
+                ->count(),
+            'totalPagosRealizados' => Cita::where('estado_pago', 'pagado')->count(),
+            'montoPagadoHoy' => Cita::where('estado_pago', 'pagado')
+                ->whereDate('fecha_pago', $today)
+                ->sum('monto_pagado'),
         ];
     }
 

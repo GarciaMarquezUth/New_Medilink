@@ -17,12 +17,17 @@ class Cita extends Model
         'fecha_hora',
         'motivo',
         'estado',
+        'estado_pago',
+        'monto_pagado',
+        'fecha_pago',
     ];
 
     protected function casts(): array
     {
         return [
             'fecha_hora' => 'datetime',
+            'monto_pagado' => 'decimal:2',
+            'fecha_pago' => 'datetime',
         ];
     }
 

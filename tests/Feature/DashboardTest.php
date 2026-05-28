@@ -78,6 +78,55 @@ class DashboardTest extends TestCase
             ->assertSee('Paciente Operacion');
     }
 
+    public function test_recepcionista_dashboard_shows_payment_control(): void
+    {
+        $recepcionista = $this->userWithRole('recepcionista');
+        $medico = $this->createMedico('Doctor Caja');
+        $paciente = $this->createPaciente('Paciente Caja');
+        $servicio = $this->createServicio('Consulta pagable');
+
+        $this->createCita($medico, $paciente, $servicio, now()->addDay()->setTime(8, 0));
+
+        $response = $this->actingAs($recepcionista)->get(route('dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Pagos pendientes')
+            ->assertSee('Servicios pendientes de pago')
+            ->assertSee('Paciente Caja')
+            ->assertSee('Marcar pagado');
+    }
+
+    public function test_recepcionista_can_mark_payment_as_paid_and_pending(): void
+    {
+        $recepcionista = $this->userWithRole('recepcionista');
+        $medico = $this->createMedico('Doctor Pago');
+        $paciente = $this->createPaciente('Paciente Pago');
+        $servicio = $this->createServicio('Consulta de pago');
+        $cita = $this->createCita($medico, $paciente, $servicio, now()->addDay()->setTime(11, 0));
+
+        $this->actingAs($recepcionista)
+            ->post(route('citas.pago-realizado', $cita->id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado_pago' => 'pagado',
+            'monto_pagado' => '500.00',
+        ]);
+
+        $this->actingAs($recepcionista)
+            ->post(route('citas.pago-pendiente', $cita->id))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado_pago' => 'pendiente',
+            'monto_pagado' => null,
+            'fecha_pago' => null,
+        ]);
+    }
+
     private function userWithRole(string $role): User
     {
         Role::findOrCreate($role, 'web');

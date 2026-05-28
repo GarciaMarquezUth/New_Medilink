@@ -161,6 +161,34 @@ class CitaController extends Controller
         return redirect()->route('citas.index')->with('success', 'Cita marcada como no presentada.');
     }
 
+    public function marcarPagoRealizado(int $id): RedirectResponse
+    {
+        $this->authorizeCitaManagement();
+
+        $cita = Cita::with('servicio')->findOrFail($id);
+
+        $cita->update([
+            'estado_pago' => 'pagado',
+            'monto_pagado' => $cita->servicio?->precio ?? 0,
+            'fecha_pago' => now(),
+        ]);
+
+        return back()->with('success', 'Pago marcado como realizado.');
+    }
+
+    public function marcarPagoPendiente(int $id): RedirectResponse
+    {
+        $this->authorizeCitaManagement();
+
+        Cita::findOrFail($id)->update([
+            'estado_pago' => 'pendiente',
+            'monto_pagado' => null,
+            'fecha_pago' => null,
+        ]);
+
+        return back()->with('success', 'Pago marcado como pendiente.');
+    }
+
     private function authorizeCitaManagement(): void
     {
         /** @var User|null $user */

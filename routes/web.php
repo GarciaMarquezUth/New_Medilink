@@ -42,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('citas/{cita}/edit', [CitaController::class, 'edit'])->name('citas.edit');
             Route::match(['put', 'patch'], 'citas/{cita}', [CitaController::class, 'update'])->name('citas.update');
             Route::delete('citas/{cita}', [CitaController::class, 'destroy'])->name('citas.destroy');
+            Route::post('citas/{id}/pago-realizado', [CitaController::class, 'marcarPagoRealizado'])->name('citas.pago-realizado');
+            Route::post('citas/{id}/pago-pendiente', [CitaController::class, 'marcarPagoPendiente'])->name('citas.pago-pendiente');
         });
 
         // --- RUTAS PERSONALIZADAS PARA EL MÉDICO ---
