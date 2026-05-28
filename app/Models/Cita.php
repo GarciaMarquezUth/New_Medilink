@@ -19,6 +19,13 @@ class Cita extends Model
         'estado',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'fecha_hora' => 'datetime',
+        ];
+    }
+
     /**
      * Obtener el médico que atiende la cita.
      */

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\PortalCitaController;
@@ -21,7 +22,7 @@ Route::get('/portal-paciente/citas', [PortalCitaController::class, 'index'])->na
 // Grupo de rutas protegidas
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::view('profile', 'profile')->name('profile');
 
     Route::prefix('dashboard')->group(function () {
