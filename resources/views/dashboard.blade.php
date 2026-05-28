@@ -2,7 +2,7 @@
     $totalMedicos = \App\Models\Medico::count();
     $totalPacientes = \App\Models\Paciente::count();
     $totalCitas = \App\Models\Cita::count();
-    $citasPendientes = \App\Models\Cita::where('estado', 'pendiente')->count();
+    $citasPendientes = \App\Models\Cita::whereIn('estado', \App\Models\Cita::estadosOcupantes())->count();
 @endphp
 
 <x-app-layout>
@@ -123,6 +123,14 @@
                         <a href="{{ route('medicos.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                             <p class="text-sm font-bold text-slate-800">Nuevo médico</p>
                             <p class="mt-2 text-xs font-medium text-slate-500">Vincula usuarios médicos.</p>
+                        </a>
+                        <a href="{{ route('servicios.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
+                            <p class="text-sm font-bold text-slate-800">Nuevo servicio</p>
+                            <p class="mt-2 text-xs font-medium text-slate-500">Define duración de consultas.</p>
+                        </a>
+                        <a href="{{ route('disponibilidades.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
+                            <p class="text-sm font-bold text-slate-800">Nuevo horario</p>
+                            <p class="mt-2 text-xs font-medium text-slate-500">Configura disponibilidad médica.</p>
                         </a>
                     @else
                         <a href="{{ route('citas.index') }}" class="rounded-3xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:bg-violet-100">

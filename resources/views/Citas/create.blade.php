@@ -12,7 +12,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 sm:p-8">
             <div class="mb-6">
                 <h2 class="text-lg font-extrabold text-slate-950">Información de la cita</h2>
-                <p class="mt-1 text-sm font-medium text-slate-500">Selecciona paciente, médico, fecha y motivo de la atención.</p>
+                <p class="mt-1 text-sm font-medium text-slate-500">Selecciona paciente, médico, servicio, fecha y motivo de la atención.</p>
             </div>
 
             <div class="grid gap-5 sm:grid-cols-2">
@@ -36,7 +36,20 @@
                     <x-input-error :messages="$errors->get('medico_id')" />
                 </div>
 
-                <div class="sm:col-span-2">
+                <div>
+                    <x-input-label for="servicio_id" value="Servicio" />
+                    <select id="servicio_id" name="servicio_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
+                        <option value="">Selecciona un servicio</option>
+                        @foreach($servicios as $servicio)
+                            <option value="{{ $servicio->id }}" {{ (int) old('servicio_id') === $servicio->id ? 'selected' : '' }}>
+                                {{ $servicio->nombre }} · {{ $servicio->duracion_minutos }} min @if($servicio->precio !== null) · ${{ number_format((float) $servicio->precio, 2) }} @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('servicio_id')" />
+                </div>
+
+                <div>
                     <x-input-label for="fecha_hora" value="Fecha y hora" />
                     <x-text-input id="fecha_hora" type="datetime-local" name="fecha_hora" value="{{ old('fecha_hora') }}" class="mt-2" required />
                     <x-input-error :messages="$errors->get('fecha_hora')" />

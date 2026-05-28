@@ -14,7 +14,7 @@
             <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-extrabold text-slate-950">Reagendar o actualizar</h2>
-                    <p class="mt-1 text-sm font-medium text-slate-500">Modifica paciente, médico, fecha, motivo o estado de la cita.</p>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Modifica paciente, médico, servicio, fecha, motivo o estado de la cita.</p>
                 </div>
                 <span class="inline-flex rounded-full bg-violet-50 px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-violet-700">Cita #{{ $cita->id }}</span>
             </div>
@@ -45,6 +45,19 @@
                 </div>
 
                 <div>
+                    <x-input-label for="servicio_id" value="Servicio" />
+                    <select id="servicio_id" name="servicio_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
+                        <option value="">Selecciona un servicio</option>
+                        @foreach($servicios as $servicio)
+                            <option value="{{ $servicio->id }}" {{ (int) old('servicio_id', $cita->servicio_id) === $servicio->id ? 'selected' : '' }}>
+                                {{ $servicio->nombre }} · {{ $servicio->duracion_minutos }} min @if($servicio->precio !== null) · ${{ number_format((float) $servicio->precio, 2) }} @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('servicio_id')" />
+                </div>
+
+                <div>
                     <x-input-label for="fecha_hora" value="Fecha y hora" />
                     <x-text-input id="fecha_hora" type="datetime-local" name="fecha_hora" value="{{ old('fecha_hora', $cita->fecha_hora ? \Illuminate\Support\Carbon::parse($cita->fecha_hora)->format('Y-m-d\TH:i') : '') }}" class="mt-2" required />
                     <x-input-error :messages="$errors->get('fecha_hora')" />
@@ -53,11 +66,9 @@
                 <div>
                     <x-input-label for="estado" value="Estado" />
                     <select id="estado" name="estado" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
-                        <option value="pendiente" {{ old('estado', $cita->estado) === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                        <option value="confirmada" {{ old('estado', $cita->estado) === 'confirmada' ? 'selected' : '' }}>Confirmada</option>
-                        <option value="cancelada" {{ old('estado', $cita->estado) === 'cancelada' ? 'selected' : '' }}>Cancelada</option>
-                        <option value="atendida" {{ old('estado', $cita->estado) === 'atendida' ? 'selected' : '' }}>Atendida</option>
-                        <option value="no_presentada" {{ old('estado', $cita->estado) === 'no_presentada' ? 'selected' : '' }}>No presentada</option>
+                        @foreach($estados as $estado => $label)
+                            <option value="{{ $estado }}" {{ old('estado', $cita->estado) === $estado ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('estado')" />
                 </div>

@@ -5,46 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\Cita;
 use App\Models\Medico;
 use App\Models\Paciente;
+use App\Models\Servicio;
 use App\Models\User;
+use App\Services\AppointmentAvailabilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CitaController extends Controller
 {
+    public function __construct(private AppointmentAvailabilityService $availability) {}
+
     public function index(): View
     {
         /** @var User|null $user */
         $user = Auth::user();
 
         if ($user && $user->hasAnyRole(['admin', 'recepcionista'])) {
-            $citas = Cita::with(['medico', 'paciente'])->latest()->get();
+            $citas = Cita::with(['medico', 'paciente', 'servicio'])->latest()->get();
         } elseif ($user && $user->hasRole('medico')) {
-            $citas = Cita::with(['medico', 'paciente'])
+            $citas = Cita::with(['medico', 'paciente', 'servicio'])
                 ->whereHas('medico', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })
                 ->latest()->get();
         } else {
-            $citas = Cita::with(['medico', 'paciente'])
+            $citas = Cita::with(['medico', 'paciente', 'servicio'])
                 ->whereHas('paciente', function ($query) use ($user) {
                     $query->where('user_id', $user?->id);
                 })
                 ->latest()->get();
         }
 
-        return view('Citas.index', compact('citas'));
+        $estadoLabels = Cita::estados();
+        $estadosOcupantes = Cita::estadosOcupantes();
+
+        return view('Citas.index', compact('citas', 'estadoLabels', 'estadosOcupantes'));
     }
 
     public function create(): View
     {
         $this->authorizeCitaManagement();
 
-        $medicos = Medico::all();
-        $pacientes = Paciente::all();
+        $medicos = Medico::orderBy('nombre')->get();
+        $pacientes = Paciente::orderBy('nombre')->get();
+        $servicios = Servicio::where('activo', true)->orderBy('nombre')->get();
 
-        return view('Citas.create', compact('medicos', 'pacientes'));
+        return view('Citas.create', compact('medicos', 'pacientes', 'servicios'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,14 +63,24 @@ class CitaController extends Controller
         $validated = $request->validate([
             'medico_id' => 'required|exists:medicos,id',
             'paciente_id' => 'required|exists:pacientes,id',
+            'servicio_id' => 'required|exists:servicios,id',
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
         ]);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
-        $validated['estado'] = 'pendiente';
+        $validated['estado'] = Cita::ESTADO_AGENDADA;
 
-        Cita::create($validated);
+        DB::transaction(function () use ($validated) {
+            $this->availability->validateCanSchedule(
+                (int) $validated['medico_id'],
+                (int) $validated['servicio_id'],
+                $validated['fecha_hora'],
+                lock: true,
+            );
+
+            Cita::create($validated);
+        });
 
         return redirect()->route('citas.index')->with('success', 'Cita agendada correctamente.');
     }
@@ -71,10 +90,18 @@ class CitaController extends Controller
         $this->authorizeCitaManagement();
 
         $cita = Cita::findOrFail($id);
-        $medicos = Medico::all();
-        $pacientes = Paciente::all();
+        $medicos = Medico::orderBy('nombre')->get();
+        $pacientes = Paciente::orderBy('nombre')->get();
+        $servicios = Servicio::where(function ($query) use ($cita) {
+            $query->where('activo', true);
 
-        return view('Citas.edit', compact('cita', 'medicos', 'pacientes'));
+            if ($cita->servicio_id) {
+                $query->orWhereKey($cita->servicio_id);
+            }
+        })->orderBy('nombre')->get();
+        $estados = Cita::estados();
+
+        return view('Citas.edit', compact('cita', 'medicos', 'pacientes', 'servicios', 'estados'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -86,14 +113,27 @@ class CitaController extends Controller
         $validated = $request->validate([
             'medico_id' => 'required|exists:medicos,id',
             'paciente_id' => 'required|exists:pacientes,id',
+            'servicio_id' => 'required|exists:servicios,id',
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
-            'estado' => 'required|in:pendiente,confirmada,cancelada,atendida,no_presentada',
+            'estado' => 'required|in:'.implode(',', array_keys(Cita::estados())),
         ]);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
 
-        $cita->update($validated);
+        DB::transaction(function () use ($cita, $validated) {
+            if (in_array($validated['estado'], Cita::estadosOcupantes(), true)) {
+                $this->availability->validateCanSchedule(
+                    (int) $validated['medico_id'],
+                    (int) $validated['servicio_id'],
+                    $validated['fecha_hora'],
+                    $cita->id,
+                    true,
+                );
+            }
+
+            $cita->update($validated);
+        });
 
         return redirect()->route('citas.index')->with('success', 'Cita actualizada correctamente.');
     }
@@ -113,7 +153,7 @@ class CitaController extends Controller
 
         $this->authorizeMedicoCita($cita);
 
-        $cita->update(['estado' => 'atendida']);
+        $cita->update(['estado' => Cita::ESTADO_ATENDIDA]);
 
         return redirect()->route('citas.index')->with('success', 'Cita marcada como atendida.');
     }
@@ -124,7 +164,7 @@ class CitaController extends Controller
 
         $this->authorizeMedicoCita($cita);
 
-        $cita->update(['estado' => 'no_presentada']);
+        $cita->update(['estado' => Cita::ESTADO_NO_SHOW]);
 
         return redirect()->route('citas.index')->with('success', 'Cita marcada como no presentada.');
     }

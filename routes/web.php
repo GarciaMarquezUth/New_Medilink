@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteController;
+use App\Http\Controllers\ServicioController;
 use Illuminate\Support\Facades\Route;
 
 // Redirección inicial
@@ -28,6 +30,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('pacientes', PacienteController::class)
             ->except(['show'])
+            ->middleware('role:admin|recepcionista');
+
+        Route::resource('servicios', ServicioController::class)
+            ->except(['show'])
+            ->middleware('role:admin|recepcionista');
+
+        Route::resource('disponibilidades', DisponibilidadController::class)
+            ->except(['show'])
+            ->parameters(['disponibilidades' => 'disponibilidad'])
             ->middleware('role:admin|recepcionista');
 
         Route::get('citas', [CitaController::class, 'index'])->name('citas.index');

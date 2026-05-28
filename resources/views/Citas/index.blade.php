@@ -25,7 +25,7 @@
             <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-extrabold text-slate-950">Agenda de citas</h2>
-                    <p class="mt-1 text-sm font-medium text-slate-500">Consulta estados, pacientes y médicos asignados.</p>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Consulta estados, servicios, pacientes y médicos asignados.</p>
                 </div>
                 <span class="rounded-full bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700">{{ $citas->count() }} registros</span>
             </div>
@@ -36,6 +36,7 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Paciente</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Médico</th>
+                            <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Servicio</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Fecha</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Estado</th>
                             <th class="px-6 py-4 text-right text-xs font-extrabold uppercase tracking-wider text-slate-500">Acciones</th>
@@ -46,7 +47,7 @@
                             @php
                                 $estadoClasses = match ($cita->estado) {
                                     'atendida' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-                                    'no_presentada' => 'bg-orange-50 text-orange-700 ring-orange-100',
+                                    'no_show' => 'bg-orange-50 text-orange-700 ring-orange-100',
                                     'cancelada' => 'bg-rose-50 text-rose-700 ring-rose-100',
                                     'confirmada' => 'bg-blue-50 text-blue-700 ring-blue-100',
                                     default => 'bg-amber-50 text-amber-700 ring-amber-100',
@@ -60,12 +61,20 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-700">
                                     {{ $cita->medico->nombre }} {{ $cita->medico->apellido }}
                                 </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-700">
+                                    @if($cita->servicio)
+                                        <p>{{ $cita->servicio->nombre }}</p>
+                                        <p class="text-xs font-medium text-slate-500">{{ $cita->servicio->duracion_minutos }} min</p>
+                                    @else
+                                        <span class="text-sm font-medium text-slate-400">Sin servicio</span>
+                                    @endif
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-600">
                                     {{ \Illuminate\Support\Carbon::parse($cita->fecha_hora)->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold capitalize ring-1 {{ $estadoClasses }}">
-                                        {{ str_replace('_', ' ', $cita->estado) }}
+                                        {{ $estadoLabels[$cita->estado] ?? str_replace('_', ' ', $cita->estado) }}
                                     </span>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
@@ -80,7 +89,7 @@
                                         @endhasanyrole
 
                                         @role('medico')
-                                            @if($cita->estado === 'pendiente')
+                                            @if(in_array($cita->estado, $estadosOcupantes, true))
                                                 <form action="{{ route('citas.atendida', $cita->id) }}" method="POST">
                                                     @csrf
                                                     <button class="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">Atendida</button>
@@ -98,7 +107,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="6" class="px-6 py-12 text-center">
                                     <p class="text-sm font-semibold text-slate-500">No hay citas para mostrar.</p>
                                 </td>
                             </tr>

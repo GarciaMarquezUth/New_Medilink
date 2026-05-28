@@ -42,6 +42,16 @@ new class extends Component
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20a5 5 0 00-10 0M12 12a4 4 0 100-8 4 4 0 000 8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 11v6m3-3h-6"/></svg>
                     Pacientes
                 </a>
+
+                <a href="{{ route('servicios.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('servicios.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6M9 16h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                    Servicios
+                </a>
+
+                <a href="{{ route('disponibilidades.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('disponibilidades.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M7 15h3m4 0h3M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+                    Disponibilidad
+                </a>
             @endhasanyrole
 
             <a href="{{ route('citas.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
@@ -87,6 +97,8 @@ new class extends Component
                 @hasanyrole(['admin', 'recepcionista'])
                     <x-responsive-nav-link :href="route('medicos.index')" :active="request()->routeIs('medicos.*')" wire:navigate>Médicos</x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('pacientes.index')" :active="request()->routeIs('pacientes.*')" wire:navigate>Pacientes</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('servicios.index')" :active="request()->routeIs('servicios.*')" wire:navigate>Servicios</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('disponibilidades.index')" :active="request()->routeIs('disponibilidades.*')" wire:navigate>Disponibilidad</x-responsive-nav-link>
                 @endhasanyrole
 
                 <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>Citas</x-responsive-nav-link>

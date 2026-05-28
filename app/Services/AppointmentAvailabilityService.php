@@ -10,9 +10,9 @@ use Illuminate\Validation\ValidationException;
 
 class AppointmentAvailabilityService
 {
-    public const OCCUPYING_STATES = ['agendada', 'confirmada'];
+    public const OCCUPYING_STATES = [Cita::ESTADO_AGENDADA, Cita::ESTADO_CONFIRMADA];
 
-    public const FINAL_STATES = ['atendida', 'no_show'];
+    public const FINAL_STATES = [Cita::ESTADO_ATENDIDA, Cita::ESTADO_NO_SHOW];
 
     public function validateCanSchedule(int $medicoId, int $servicioId, string $fechaHora, ?int $ignoreCitaId = null, bool $lock = false): array
     {
