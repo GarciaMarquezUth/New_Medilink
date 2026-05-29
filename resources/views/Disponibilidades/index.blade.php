@@ -8,7 +8,7 @@
             @can('disponibilidades.crear')
                 <a href="{{ route('disponibilidades.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
-                    Nueva disponibilidad
+                    Gestionar semana
                 </a>
             @endcan
         </div>
@@ -25,7 +25,7 @@
             <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-extrabold text-slate-950">Horarios médicos</h2>
-                    <p class="mt-1 text-sm font-medium text-slate-500">Las citas solo pueden agendarse dentro de estos bloques activos.</p>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Las citas solo pueden agendarse dentro de estos bloques activos. La edición semanal no elimina registros existentes.</p>
                 </div>
                 <span class="rounded-full bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700">{{ $disponibilidades->count() }} registros</span>
             </div>

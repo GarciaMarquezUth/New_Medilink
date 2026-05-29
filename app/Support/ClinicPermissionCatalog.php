@@ -62,6 +62,9 @@ class ClinicPermissionCatalog
             return [
                 self::permissionName('citas', 'ver'),
                 self::permissionName('citas', 'editar'),
+                self::permissionName('disponibilidades', 'ver'),
+                self::permissionName('disponibilidades', 'crear'),
+                self::permissionName('disponibilidades', 'editar'),
             ];
         }
 

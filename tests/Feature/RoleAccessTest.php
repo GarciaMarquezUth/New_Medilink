@@ -8,6 +8,7 @@ use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Servicio;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -391,6 +392,137 @@ class RoleAccessTest extends TestCase
             ->assertSee('Doctor Horario');
     }
 
+    public function test_admin_can_save_weekly_disponibilidades(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Semana');
+
+        $this->actingAs($admin)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '14:00'],
+                    2 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '14:00'],
+                    3 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '14:00'],
+                    4 => ['activo' => '1', 'hora_inicio' => '10:00', 'hora_fin' => '18:00'],
+                    5 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '13:00'],
+                ]),
+            ])
+            ->assertRedirect(route('disponibilidades.create', ['medico_id' => $medico->id]));
+
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 4,
+            'hora_inicio' => '10:00',
+            'hora_fin' => '18:00',
+            'activo' => true,
+        ]);
+        $this->assertDatabaseMissing('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 6,
+            'activo' => true,
+        ]);
+        $this->assertDatabaseCount('disponibilidades', 5);
+    }
+
+    public function test_weekly_disponibilidad_rejects_invalid_hours(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Invalido');
+
+        $this->actingAs($admin)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '14:00', 'hora_fin' => '08:00'],
+                ]),
+            ])
+            ->assertSessionHasErrors('dias.1.hora_fin');
+
+        $this->assertDatabaseCount('disponibilidades', 0);
+    }
+
+    public function test_weekly_disponibilidad_does_not_leave_future_citas_outside_schedule(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Con Cita');
+        $paciente = $this->createPaciente('Paciente Futuro');
+        $servicio = $this->createServicio(60, $medico);
+        $fecha = Carbon::now()->addWeek()->next(Carbon::MONDAY)->setTime(9, 0);
+        $diaSemana = $fecha->dayOfWeekIso;
+
+        Disponibilidad::create([
+            'medico_id' => $medico->id,
+            'dia_semana' => $diaSemana,
+            'hora_inicio' => '08:00',
+            'hora_fin' => '12:00',
+            'activo' => true,
+        ]);
+
+        Cita::create([
+            'medico_id' => $medico->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => $fecha->format('Y-m-d H:i:s'),
+            'motivo' => 'Consulta futura',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'dias' => $this->weeklyDias([
+                    $diaSemana => ['activo' => '1', 'hora_inicio' => '10:00', 'hora_fin' => '12:00'],
+                ]),
+            ])
+            ->assertSessionHasErrors("dias.$diaSemana.hora_inicio");
+
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => $diaSemana,
+            'hora_inicio' => '08:00',
+            'hora_fin' => '12:00',
+            'activo' => true,
+        ]);
+    }
+
+    public function test_medico_can_only_manage_own_weekly_disponibilidad(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $medico = $this->createMedico('Doctor Propio', $medicoUser);
+        $otroMedico = $this->createMedico('Doctor Ajeno');
+
+        $this->actingAs($medicoUser)
+            ->get(route('disponibilidades.create'))
+            ->assertOk()
+            ->assertSee('Doctor Propio')
+            ->assertDontSee('Doctor Ajeno');
+
+        $this->actingAs($medicoUser)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $otroMedico->id,
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '12:00'],
+                ]),
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($medicoUser)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '12:00'],
+                ]),
+            ])
+            ->assertRedirect(route('disponibilidades.create', ['medico_id' => $medico->id]));
+
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 1,
+            'activo' => true,
+        ]);
+    }
+
     private function userWithRole(string $role): User
     {
         Role::findOrCreate($role, 'web');
@@ -481,5 +613,24 @@ class RoleAccessTest extends TestCase
             'hora_fin' => '12:00',
             'activo' => true,
         ]);
+    }
+
+    private function weeklyDias(array $overrides = []): array
+    {
+        $dias = [];
+
+        foreach (range(1, 7) as $dia) {
+            $dias[$dia] = [
+                'activo' => '0',
+                'hora_inicio' => '08:00',
+                'hora_fin' => '14:00',
+            ];
+        }
+
+        foreach ($overrides as $dia => $config) {
+            $dias[$dia] = array_merge($dias[$dia], $config);
+        }
+
+        return $dias;
     }
 }

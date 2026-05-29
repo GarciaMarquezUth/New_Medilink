@@ -512,8 +512,8 @@
 
                         @can('disponibilidades.crear')
                             <a href="{{ route('disponibilidades.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
-                                <p class="text-sm font-bold text-slate-800">Nuevo horario</p>
-                                <p class="mt-2 text-xs font-medium text-slate-500">Configura disponibilidad médica.</p>
+                                <p class="text-sm font-bold text-slate-800">Gestionar horario</p>
+                                <p class="mt-2 text-xs font-medium text-slate-500">Configura disponibilidad médica semanal.</p>
                             </a>
                         @endcan
 
