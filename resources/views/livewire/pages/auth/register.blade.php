@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Services\PatientProfileService;
 use App\Services\PendingAppointmentService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -61,6 +62,16 @@ new #[Layout('layouts.guest')] class extends Component
         Session::regenerate();
 
         $pendingAppointments = app(PendingAppointmentService::class);
+        $patientProfiles = app(PatientProfileService::class);
+
+        if ($patientProfiles->requiresCompletion($user)) {
+            $patientProfiles->ensurePatientFor($user, $pendingAppointments->pending() ?? []);
+            session()->flash('status', PatientProfileService::INCOMPLETE_MESSAGE);
+
+            $this->redirect(route('pacientes.profile', absolute: false), navigate: true);
+
+            return;
+        }
 
         if ($pendingAppointments->hasPending()) {
             $payload = $pendingAppointments->pending();

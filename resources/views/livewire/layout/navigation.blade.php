@@ -65,6 +65,10 @@ new class extends Component
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
                     Agendar cita
                 </a>
+                <a href="{{ route('pacientes.profile') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('pacientes.profile*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 21a8 8 0 0116 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6"/></svg>
+                    Mi perfil médico
+                </a>
             @endrole
 
             @role('medico')
@@ -131,6 +135,7 @@ new class extends Component
 
                 @role('paciente')
                     <x-responsive-nav-link :href="route('pacientes.citas.create')" :active="request()->routeIs('pacientes.citas.*')" wire:navigate>Agendar cita</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('pacientes.profile')" :active="request()->routeIs('pacientes.profile*')" wire:navigate>Mi perfil médico</x-responsive-nav-link>
                 @endrole
 
                 @role('medico')

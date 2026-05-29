@@ -83,6 +83,18 @@
                     <textarea id="alergias" name="alergias" rows="3" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10">{{ old('alergias', $paciente->alergias) }}</textarea>
                     <x-input-error :messages="$errors->get('alergias')" />
                 </div>
+
+                <div>
+                    <x-input-label for="contacto_emergencia" value="Contacto de emergencia" />
+                    <x-text-input id="contacto_emergencia" name="contacto_emergencia" value="{{ old('contacto_emergencia', $paciente->contacto_emergencia) }}" class="mt-2" />
+                    <x-input-error :messages="$errors->get('contacto_emergencia')" />
+                </div>
+
+                <div>
+                    <x-input-label for="telefono_emergencia" value="Teléfono de emergencia" />
+                    <x-text-input id="telefono_emergencia" name="telefono_emergencia" value="{{ old('telefono_emergencia', $paciente->telefono_emergencia) }}" class="mt-2" />
+                    <x-input-error :messages="$errors->get('telefono_emergencia')" />
+                </div>
             </div>
         </div>
 

@@ -6,9 +6,12 @@ use App\Models\Cita;
 use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\User;
+use App\Services\PatientProfileService;
+use App\Services\PendingAppointmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -40,6 +43,8 @@ class PacienteController extends Controller
             'direccion' => 'nullable|string',
             'tipo_sangre' => 'nullable|string|max:5',
             'alergias' => 'nullable|string',
+            'contacto_emergencia' => 'nullable|string|max:255',
+            'telefono_emergencia' => 'nullable|string|max:20',
             'user_id' => 'nullable|exists:users,id|unique:pacientes,user_id',
         ]);
 
@@ -73,6 +78,8 @@ class PacienteController extends Controller
             'direccion' => 'nullable|string',
             'tipo_sangre' => 'nullable|string|max:5',
             'alergias' => 'nullable|string',
+            'contacto_emergencia' => 'nullable|string|max:255',
+            'telefono_emergencia' => 'nullable|string|max:20',
             'user_id' => 'nullable|exists:users,id|unique:pacientes,user_id,'.$id,
         ]);
 
@@ -89,6 +96,45 @@ class PacienteController extends Controller
         Paciente::findOrFail($id)->delete();
 
         return redirect()->route('pacientes.index')->with('success', 'Paciente eliminado.');
+    }
+
+    public function profile(PatientProfileService $profiles): View
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $paciente = $profiles->ensurePatientFor($user);
+
+        return view('Pacientes.profile', compact('paciente', 'user'));
+    }
+
+    public function updateProfile(Request $request, PatientProfileService $profiles, PendingAppointmentService $pendingAppointments): RedirectResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $paciente = $profiles->ensurePatientFor($user);
+
+        $validated = $request->validate($this->patientProfileRules());
+        $paciente->update($validated);
+
+        if ($pendingAppointments->hasPending()) {
+            $payload = $pendingAppointments->pending();
+
+            try {
+                $pendingAppointments->confirmPendingFor($user);
+                session()->forget('url.intended');
+
+                return redirect()->route('dashboard')->with('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+            } catch (ValidationException) {
+                $pendingAppointments->forgetPending();
+                session()->forget('url.intended');
+
+                return redirect()->route('portal-citas.index')
+                    ->with('error', PendingAppointmentService::UNAVAILABLE_MESSAGE)
+                    ->withInput($payload ?? []);
+            }
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Perfil médico actualizado correctamente.');
     }
 
     public function showForMedico(Paciente $paciente): View
@@ -114,6 +160,20 @@ class PacienteController extends Controller
         $estadoLabels = Cita::estados();
 
         return view('Pacientes.medico-show', compact('paciente', 'medico', 'citas', 'estadoLabels'));
+    }
+
+    private function patientProfileRules(): array
+    {
+        return [
+            'fecha_nacimiento' => ['required', 'date', 'before:today'],
+            'genero' => ['required', 'string', 'max:20'],
+            'telefono' => ['required', 'string', 'max:20'],
+            'direccion' => ['required', 'string', 'max:500'],
+            'tipo_sangre' => ['required', 'string', 'max:5', Rule::in(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'No sé'])],
+            'alergias' => ['required', 'string', 'max:1000'],
+            'contacto_emergencia' => ['nullable', 'string', 'max:255'],
+            'telefono_emergencia' => ['nullable', 'string', 'max:20'],
+        ];
     }
 
     private function usuariosConRol(string $role)

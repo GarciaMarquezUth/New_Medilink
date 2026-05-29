@@ -99,6 +99,14 @@
                         <dt class="text-xs font-extrabold uppercase tracking-wide text-slate-400">Alergias</dt>
                         <dd class="mt-1 text-sm font-bold text-slate-800">{{ $paciente->alergias ?: 'Sin registrar' }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-xs font-extrabold uppercase tracking-wide text-slate-400">Contacto de emergencia</dt>
+                        <dd class="mt-1 text-sm font-bold text-slate-800">{{ $paciente->contacto_emergencia ?: 'Sin registrar' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-extrabold uppercase tracking-wide text-slate-400">Teléfono de emergencia</dt>
+                        <dd class="mt-1 text-sm font-bold text-slate-800">{{ $paciente->telefono_emergencia ?: 'Sin registrar' }}</dd>
+                    </div>
                 </dl>
             </div>
 

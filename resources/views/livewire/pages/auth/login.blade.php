@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use App\Services\PatientProfileService;
 use App\Services\PendingAppointmentService;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,16 @@ new #[Layout('layouts.guest')] class extends Component
         Session::regenerate();
 
         $pendingAppointments = app(PendingAppointmentService::class);
+        $patientProfiles = app(PatientProfileService::class);
+
+        if ($patientProfiles->requiresCompletion(auth()->user())) {
+            $patientProfiles->ensurePatientFor(auth()->user(), $pendingAppointments->pending() ?? []);
+            session()->flash('status', PatientProfileService::INCOMPLETE_MESSAGE);
+
+            $this->redirect(route('pacientes.profile', absolute: false), navigate: true);
+
+            return;
+        }
 
         if ($pendingAppointments->hasPending()) {
             $payload = $pendingAppointments->pending();

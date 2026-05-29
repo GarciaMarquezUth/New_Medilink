@@ -3,8 +3,10 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Services\PatientProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -35,6 +37,29 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard', absolute: false));
 
         $this->assertAuthenticated();
+    }
+
+    public function test_patient_with_incomplete_profile_is_redirected_after_login(): void
+    {
+        Role::findOrCreate('paciente', 'web');
+        $user = User::factory()->create([
+            'name' => 'Paciente Login',
+            'email' => 'paciente-login@example.com',
+        ]);
+        $user->assignRole('paciente');
+
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'password');
+
+        $component->call('login');
+
+        $component
+            ->assertHasNoErrors()
+            ->assertRedirect(route('pacientes.profile', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(PatientProfileService::INCOMPLETE_MESSAGE, session('status'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

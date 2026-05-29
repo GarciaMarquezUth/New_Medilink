@@ -104,6 +104,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:paciente');
 
         Route::middleware('role:paciente')->group(function () {
+            Route::get('mi-perfil-paciente', [PacienteController::class, 'profile'])->name('pacientes.profile');
+            Route::put('mi-perfil-paciente', [PacienteController::class, 'updateProfile'])->name('pacientes.profile.update');
             Route::get('mis-citas/crear', [PacienteCitaController::class, 'create'])->name('pacientes.citas.create');
             Route::post('mis-citas', [PacienteCitaController::class, 'store'])->name('pacientes.citas.store');
             Route::get('mis-citas/medicos/{medico}/servicios', [PacienteCitaController::class, 'serviciosPorMedico'])->name('pacientes.citas.servicios');

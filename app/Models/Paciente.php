@@ -7,18 +7,40 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Paciente extends Model
 {
-    protected $fillable = [
-        'nombre', 
-        'apellido', 
-        'fecha_nacimiento', 
-        'genero', 
-        'email', 
-        'telefono', 
-        'direccion', 
-        'tipo_sangre', 
+    public const REQUIRED_PROFILE_FIELDS = [
+        'fecha_nacimiento',
+        'genero',
+        'telefono',
+        'direccion',
+        'tipo_sangre',
         'alergias',
-        'user_id' // <--- NECESARIO PARA VINCULAR CON EL USUARIO
     ];
+
+    protected $fillable = [
+        'nombre',
+        'apellido',
+        'fecha_nacimiento',
+        'genero',
+        'email',
+        'telefono',
+        'direccion',
+        'tipo_sangre',
+        'alergias',
+        'contacto_emergencia',
+        'telefono_emergencia',
+        'user_id',
+    ];
+
+    public function isProfileComplete(): bool
+    {
+        foreach (self::REQUIRED_PROFILE_FIELDS as $field) {
+            if (blank($this->{$field})) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     // Relación: Un paciente pertenece a un usuario del sistema
     public function user(): BelongsTo

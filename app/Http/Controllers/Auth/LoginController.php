@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\PatientProfileService;
 use App\Services\PendingAppointmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class LoginController extends Controller
         return view('Inicio-de-sesion.login');
     }
 
-    public function login(Request $request, PendingAppointmentService $pendingAppointments)
+    public function login(Request $request, PendingAppointmentService $pendingAppointments, PatientProfileService $patientProfiles)
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -24,6 +25,13 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
+            if ($patientProfiles->requiresCompletion($request->user())) {
+                $patientProfiles->ensurePatientFor($request->user(), $pendingAppointments->pending() ?? []);
+                $request->session()->flash('status', PatientProfileService::INCOMPLETE_MESSAGE);
+
+                return redirect()->route('pacientes.profile');
+            }
 
             if ($pendingAppointments->hasPending()) {
                 $payload = $pendingAppointments->pending();

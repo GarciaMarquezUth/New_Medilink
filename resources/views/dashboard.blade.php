@@ -14,6 +14,8 @@
     $canCancelCita = fn ($cita) => in_array($cita->estado, $estadosOcupantes, true) && $cita->fecha_hora->isFuture();
 
     if ($isPacienteDashboard) {
+        $pacientePerfil = \App\Models\Paciente::where('user_id', $user->id)->first();
+        $perfilPacienteIncompleto = ! $pacientePerfil?->isProfileComplete();
         $citasPaciente = \App\Models\Cita::with(['medico', 'servicio'])
             ->whereHas('paciente', fn ($query) => $query->where('user_id', $user->id))
             ->orderBy('fecha_hora')
@@ -136,6 +138,15 @@
             @if(session('status'))
                 <div class="rounded-3xl border border-violet-100 bg-violet-50 px-5 py-4 text-sm font-semibold text-violet-700 shadow-sm">
                     {{ session('status') }}
+                </div>
+            @endif
+
+            @if($perfilPacienteIncompleto)
+                <div class="flex flex-col gap-3 rounded-3xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span>Completa tu perfil médico para poder agendar citas.</span>
+                    <a href="{{ route('pacientes.profile') }}" class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-600">
+                        Completar perfil
+                    </a>
                 </div>
             @endif
 

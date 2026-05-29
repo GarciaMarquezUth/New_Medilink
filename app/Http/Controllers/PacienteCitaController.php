@@ -6,6 +6,7 @@ use App\Models\Medico;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Services\AppointmentAvailabilityService;
+use App\Services\PatientProfileService;
 use App\Services\PendingAppointmentService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -21,10 +22,20 @@ class PacienteCitaController extends Controller
     public function __construct(
         private AppointmentAvailabilityService $availability,
         private PendingAppointmentService $appointments,
+        private PatientProfileService $patientProfiles,
     ) {}
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($this->patientProfiles->requiresCompletion($user)) {
+            $this->patientProfiles->ensurePatientFor($user);
+
+            return redirect()->route('pacientes.profile')->with('status', PatientProfileService::INCOMPLETE_MESSAGE);
+        }
+
         $medicos = Medico::with(['servicios' => fn ($query) => $query->where('activo', true)->orderBy('nombre')])
             ->whereHas('servicios', fn ($query) => $query->where('activo', true)->where('duracion_minutos', '>=', 5))
             ->orderBy('nombre')
@@ -84,6 +95,12 @@ class PacienteCitaController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
+
+        if ($this->patientProfiles->requiresCompletion($user)) {
+            $this->patientProfiles->ensurePatientFor($user);
+
+            return redirect()->route('pacientes.profile')->with('status', PatientProfileService::INCOMPLETE_MESSAGE);
+        }
 
         $validated = $this->appointments->validateAppointmentPayload($request->all(), requirePatientFields: false);
         $payload = $this->appointments->withAuthenticatedPatientData([

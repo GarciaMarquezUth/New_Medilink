@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\PatientProfileService;
 use App\Services\PendingAppointmentService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,7 @@ use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
-    public function store(Request $request, PendingAppointmentService $pendingAppointments): RedirectResponse
+    public function store(Request $request, PendingAppointmentService $pendingAppointments, PatientProfileService $patientProfiles): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -37,6 +38,12 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         $request->session()->regenerate();
+
+        if ($patientProfiles->requiresCompletion($user)) {
+            $patientProfiles->ensurePatientFor($user, $pendingAppointments->pending() ?? []);
+
+            return redirect()->route('pacientes.profile')->with('status', PatientProfileService::INCOMPLETE_MESSAGE);
+        }
 
         if ($pendingAppointments->hasPending()) {
             $payload = $pendingAppointments->pending();

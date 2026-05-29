@@ -347,14 +347,13 @@ class PatientPortalTest extends TestCase
             ->set('password', 'password')
             ->set('password_confirmation', 'password')
             ->call('register')
-            ->assertRedirect(route('dashboard', absolute: false));
+            ->assertRedirect(route('pacientes.profile', absolute: false));
 
         $user = User::where('email', 'registrado@example.com')->firstOrFail();
 
         $this->assertAuthenticatedAs($user);
         $this->assertTrue($user->hasRole('paciente'));
-        $this->assertFalse(session()->has(PendingAppointmentService::SESSION_KEY));
-        $this->assertSame(PendingAppointmentService::CONFIRMED_MESSAGE, session('success'));
+        $this->assertTrue(session()->has(PendingAppointmentService::SESSION_KEY));
 
         $this->assertDatabaseHas('pacientes', [
             'nombre' => 'Paciente',
@@ -363,6 +362,15 @@ class PatientPortalTest extends TestCase
             'telefono' => '555-1010',
             'user_id' => $user->id,
         ]);
+
+        $this->actingAs($user)
+            ->put(route('pacientes.profile.update'), $this->completeProfilePayload([
+                'telefono' => '555-1010',
+            ]))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+
+        $this->assertFalse(session()->has(PendingAppointmentService::SESSION_KEY));
 
         $this->assertDatabaseHas('citas', [
             'medico_id' => $medico->id,
@@ -465,6 +473,25 @@ class PatientPortalTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_incomplete_patient_profile_shows_dashboard_alert_and_blocks_internal_booking(): void
+    {
+        $user = $this->userWithRole('paciente', [
+            'name' => 'Paciente Incompleto',
+            'email' => 'incompleto@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Completa tu perfil médico para poder agendar citas.')
+            ->assertSee(route('pacientes.profile'), false);
+
+        $this->actingAs($user)
+            ->get(route('pacientes.citas.create'))
+            ->assertRedirect(route('pacientes.profile'))
+            ->assertSessionHas('status', 'Completa tu perfil médico para poder agendar citas.');
+    }
+
     public function test_patient_internal_create_uses_dashboard_layout_and_hides_patient_fields(): void
     {
         Carbon::setTestNow('2026-05-29 07:00:00');
@@ -473,6 +500,8 @@ class PatientPortalTest extends TestCase
             'name' => 'Paciente Interno',
             'email' => 'interno@example.com',
         ]);
+        $paciente = $this->createPaciente('Paciente Interno', 'interno@example.com', '555-3030');
+        $paciente->update(['user_id' => $user->id]);
         $medico = $this->createMedico('Doctor Interno');
         $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
@@ -583,6 +612,8 @@ class PatientPortalTest extends TestCase
             'name' => 'Paciente Seguro',
             'email' => 'seguro@example.com',
         ]);
+        $paciente = $this->createPaciente('Paciente Seguro', 'seguro@example.com', '555-9090');
+        $paciente->update(['user_id' => $user->id]);
         $medico = $this->createMedico('Doctor Seguro');
         $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
@@ -602,10 +633,11 @@ class PatientPortalTest extends TestCase
             ->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('pacientes', [
-            'nombre' => 'Paciente',
-            'apellido' => 'Seguro',
+            'id' => $paciente->id,
+            'nombre' => 'Paciente Seguro',
+            'apellido' => 'Prueba',
             'email' => 'seguro@example.com',
-            'telefono' => '',
+            'telefono' => '555-9090',
             'user_id' => $user->id,
         ]);
 
@@ -665,10 +697,27 @@ class PatientPortalTest extends TestCase
             'nombre' => $nombre,
             'apellido' => 'Prueba',
             'fecha_nacimiento' => '1990-01-01',
-            'genero' => 'N/A',
+            'genero' => 'Otro',
             'email' => $email,
             'telefono' => $telefono,
+            'direccion' => 'Calle de prueba 123',
+            'tipo_sangre' => 'O+',
+            'alergias' => 'Ninguna conocida',
         ]);
+    }
+
+    private function completeProfilePayload(array $overrides = []): array
+    {
+        return array_merge([
+            'fecha_nacimiento' => '1990-01-01',
+            'genero' => 'Otro',
+            'telefono' => '555-0000',
+            'direccion' => 'Calle de prueba 123',
+            'tipo_sangre' => 'O+',
+            'alergias' => 'Ninguna conocida',
+            'contacto_emergencia' => 'Contacto Prueba',
+            'telefono_emergencia' => '555-9999',
+        ], $overrides);
     }
 
     private function createServicio(int $duracion, ?Medico $medico = null): Servicio
