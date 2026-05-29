@@ -10,9 +10,11 @@
         $selectedServicios = collect(old('servicio_ids', $medico->servicios->pluck('id')->all()))->map(fn ($id) => (int) $id)->all();
     @endphp
 
-    <form action="{{ route('medicos.update', $medico->id) }}" method="POST" class="mx-auto max-w-4xl space-y-6">
+    <form action="{{ route('medicos.update', $medico->id) }}" method="POST" enctype="multipart/form-data" class="mx-auto max-w-4xl space-y-6">
         @csrf
         @method('PUT')
+
+        @include('Medicos.partials.photo-upload', ['medico' => $medico])
 
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60 sm:p-8">
             <div class="mb-6">

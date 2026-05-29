@@ -46,9 +46,7 @@
                             <tr class="transition hover:bg-violet-50/40">
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-sm font-extrabold text-violet-700">
-                                            {{ strtoupper(substr($medico->nombre, 0, 1)) }}
-                                        </div>
+                                        <x-medico-avatar :medico="$medico" class="h-11 w-11 rounded-2xl" text-class="text-sm" />
                                         <div>
                                             <p class="font-bold text-slate-950">{{ $medico->nombre }} {{ $medico->apellido }}</p>
                                             <p class="text-sm font-medium text-slate-500">{{ $medico->email }}</p>

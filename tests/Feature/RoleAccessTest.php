@@ -10,6 +10,8 @@ use App\Models\Servicio;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -87,6 +89,82 @@ class RoleAccessTest extends TestCase
             ->assertDontSee('Nuevo servicio')
             ->assertDontSee('Médicos</p>', false)
             ->assertDontSee('Pacientes</p>', false);
+    }
+
+    public function test_medico_can_update_own_profile_photo_and_data(): void
+    {
+        Storage::fake('public');
+
+        $medicoUser = $this->userWithRole('medico');
+        $medico = $this->createMedico('Doctor Perfil', $medicoUser);
+        $this->createServicio(30, $medico);
+
+        $this->actingAs($medicoUser)
+            ->get(route('medicos.profile'))
+            ->assertOk()
+            ->assertSee('Mi perfil médico')
+            ->assertSee('Foto de perfil');
+
+        $this->actingAs($medicoUser)
+            ->put(route('medicos.profile.update'), [
+                'nombre' => 'Doctor Actualizado',
+                'apellido' => 'Perfil',
+                'email' => 'perfil-medico@example.com',
+                'especialidad' => 'Cardiología',
+                'telefono' => '555-2020',
+                'photo' => $this->fakePngUpload('doctor.png'),
+            ])
+            ->assertRedirect(route('medicos.profile'));
+
+        $medico->refresh();
+
+        $this->assertSame('Doctor Actualizado', $medico->nombre);
+        $this->assertNotNull($medico->photo_path);
+        $oldPath = $medico->photo_path;
+        Storage::disk('public')->assertExists($medico->photo_path);
+
+        $this->actingAs($medicoUser)
+            ->put(route('medicos.profile.update'), [
+                'nombre' => $medico->nombre,
+                'apellido' => $medico->apellido,
+                'email' => $medico->email,
+                'especialidad' => $medico->especialidad,
+                'telefono' => $medico->telefono,
+                'remove_photo' => '1',
+            ])
+            ->assertRedirect(route('medicos.profile'));
+
+        $medico->refresh();
+
+        $this->assertNull($medico->photo_path);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_admin_can_update_medico_photo(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Foto');
+        $servicio = $this->createServicio(30, $medico);
+
+        $this->actingAs($admin)
+            ->put(route('medicos.update', $medico->id), [
+                'nombre' => $medico->nombre,
+                'apellido' => $medico->apellido,
+                'email' => $medico->email,
+                'especialidad' => $medico->especialidad,
+                'telefono' => $medico->telefono,
+                'user_id' => '',
+                'servicio_ids' => [$servicio->id],
+                'photo' => $this->fakePngUpload('doctor-admin.png'),
+            ])
+            ->assertRedirect(route('medicos.index'));
+
+        $medico->refresh();
+
+        $this->assertNotNull($medico->photo_path);
+        Storage::disk('public')->assertExists($medico->photo_path);
     }
 
     public function test_medico_can_mark_own_citas_as_atendida_or_no_presentada(): void
@@ -422,7 +500,86 @@ class RoleAccessTest extends TestCase
             'dia_semana' => 6,
             'activo' => true,
         ]);
-        $this->assertDatabaseCount('disponibilidades', 5);
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 6,
+            'activo' => false,
+        ]);
+        $this->assertDatabaseCount('disponibilidades', 7);
+    }
+
+    public function test_disponibilidades_index_shows_one_weekly_card_per_medico(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Card');
+        $otroMedico = $this->createMedico('Doctor Otra Card');
+        $this->createDisponibilidad($medico, 1);
+        $this->createDisponibilidad($medico, 2);
+        $this->createDisponibilidad($otroMedico, 6);
+
+        $response = $this->actingAs($admin)
+            ->get(route('disponibilidades.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Disponibilidad semanal por médico')
+            ->assertSee('Editar semana')
+            ->assertSee('Guardar cambios')
+            ->assertSee('Lunes')
+            ->assertSee('Domingo');
+
+        $content = $response->getContent();
+
+        $this->assertSame(1, substr_count($content, 'Doctor Card'));
+        $this->assertSame(1, substr_count($content, 'Doctor Otra Card'));
+    }
+
+    public function test_weekly_disponibilidad_updates_existing_records_without_duplicates(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Sin Duplicados');
+
+        $this->actingAs($admin)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'redirect_to' => 'index',
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '08:00', 'hora_fin' => '12:00'],
+                ]),
+            ])
+            ->assertRedirect(route('disponibilidades.index'));
+
+        $this->assertDatabaseCount('disponibilidades', 7);
+
+        $this->actingAs($admin)
+            ->post(route('disponibilidades.store'), [
+                'medico_id' => $medico->id,
+                'redirect_to' => 'index',
+                'dias' => $this->weeklyDias([
+                    1 => ['activo' => '1', 'hora_inicio' => '09:00', 'hora_fin' => '13:00'],
+                    2 => ['activo' => '1', 'hora_inicio' => '10:00', 'hora_fin' => '14:00'],
+                ]),
+            ])
+            ->assertRedirect(route('disponibilidades.index'));
+
+        $this->assertDatabaseCount('disponibilidades', 7);
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 1,
+            'hora_inicio' => '09:00',
+            'hora_fin' => '13:00',
+            'activo' => true,
+        ]);
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 2,
+            'activo' => true,
+        ]);
+        $this->assertDatabaseHas('disponibilidades', [
+            'medico_id' => $medico->id,
+            'dia_semana' => 3,
+            'activo' => false,
+        ]);
     }
 
     public function test_weekly_disponibilidad_rejects_invalid_hours(): void
@@ -632,5 +789,14 @@ class RoleAccessTest extends TestCase
         }
 
         return $dias;
+    }
+
+    private function fakePngUpload(string $name): UploadedFile
+    {
+        $path = tempnam(sys_get_temp_dir(), 'medico-photo-');
+
+        file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='));
+
+        return new UploadedFile($path, $name, 'image/png', null, true);
     }
 }

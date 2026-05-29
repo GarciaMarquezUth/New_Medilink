@@ -17,14 +17,22 @@ class DisponibilidadController extends Controller
 {
     public function index(): View
     {
-        $disponibilidades = Disponibilidad::with('medico')
-            ->whereIn('medico_id', $this->visibleMedicosQuery()->pluck('id'))
-            ->orderBy('medico_id')
-            ->orderBy('dia_semana')
-            ->orderBy('hora_inicio')
+        $medicos = $this->visibleMedicosQuery()
+            ->with(['disponibilidades' => fn ($query) => $query
+                ->orderBy('dia_semana')
+                ->orderByDesc('activo')
+                ->orderBy('hora_inicio')
+                ->orderBy('id')])
+            ->orderBy('nombre')
+            ->orderBy('apellido')
             ->get();
+        $diasSemana = Disponibilidad::diasSemana();
+        $semanas = $medicos->mapWithKeys(fn (Medico $medico) => [
+            (string) $medico->id => $this->buildSemanaFromRegistros($medico->disponibilidades),
+        ]);
+        $totalRegistros = $medicos->sum(fn (Medico $medico) => $medico->disponibilidades->count());
 
-        return view('Disponibilidades.index', compact('disponibilidades'));
+        return view('Disponibilidades.index', compact('medicos', 'diasSemana', 'semanas', 'totalRegistros'));
     }
 
     public function create(Request $request): View
@@ -149,47 +157,31 @@ class DisponibilidadController extends Controller
 
                 $principal = $registros->first();
 
-                if ($config['activo']) {
-                    if ($principal) {
-                        $principal->update([
-                            'hora_inicio' => $config['hora_inicio'],
-                            'hora_fin' => $config['hora_fin'],
-                            'activo' => true,
-                        ]);
-                    } else {
-                        $principal = Disponibilidad::create([
-                            'medico_id' => $medicoId,
-                            'dia_semana' => $dia,
-                            'hora_inicio' => $config['hora_inicio'],
-                            'hora_fin' => $config['hora_fin'],
-                            'activo' => true,
-                        ]);
-                    }
-
-                    $registros->reject(fn (Disponibilidad $registro) => $registro->id === $principal->id)->each->update(['activo' => false]);
-
-                    continue;
-                }
-
-                if ($principal && $config['hora_inicio'] && $config['hora_fin']) {
+                if ($principal) {
                     $principal->update([
                         'hora_inicio' => $config['hora_inicio'],
                         'hora_fin' => $config['hora_fin'],
-                        'activo' => false,
+                        'activo' => $config['activo'],
                     ]);
-
-                    $registros->reject(fn (Disponibilidad $registro) => $registro->id === $principal->id)->each->update(['activo' => false]);
-
-                    continue;
+                } else {
+                    $principal = Disponibilidad::create([
+                        'medico_id' => $medicoId,
+                        'dia_semana' => $dia,
+                        'hora_inicio' => $config['hora_inicio'],
+                        'hora_fin' => $config['hora_fin'],
+                        'activo' => $config['activo'],
+                    ]);
                 }
 
-                $registros->each->update(['activo' => false]);
+                $registros->reject(fn (Disponibilidad $registro) => $registro->id === $principal->id)->each->update(['activo' => false]);
             }
         });
 
-        return redirect()
-            ->route('disponibilidades.create', ['medico_id' => $medicoId])
-            ->with('success', 'Disponibilidad semanal actualizada correctamente.');
+        $redirect = $request->input('redirect_to') === 'index'
+            ? redirect()->route('disponibilidades.index')
+            : redirect()->route('disponibilidades.create', ['medico_id' => $medicoId]);
+
+        return $redirect->with('success', 'Disponibilidad semanal actualizada correctamente.');
     }
 
     private function validateDisponibilidad(Request $request): array
@@ -216,27 +208,24 @@ class DisponibilidadController extends Controller
             $activo = filter_var($data['activo'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $horaInicio = $data['hora_inicio'] ?? null;
             $horaFin = $data['hora_fin'] ?? null;
-            $tieneHorario = $horaInicio || $horaFin;
 
-            if ($activo || $tieneHorario) {
-                $validator = validator([
-                    'hora_inicio' => $horaInicio,
-                    'hora_fin' => $horaFin,
-                ], [
-                    'hora_inicio' => 'required|date_format:H:i',
-                    'hora_fin' => 'required|date_format:H:i|after:hora_inicio',
-                ], [
-                    'hora_inicio.required' => "Indica la hora de inicio para $nombre.",
-                    'hora_inicio.date_format' => "La hora de inicio de $nombre no es válida.",
-                    'hora_fin.required' => "Indica la hora de fin para $nombre.",
-                    'hora_fin.date_format' => "La hora de fin de $nombre no es válida.",
-                    'hora_fin.after' => "La hora de fin de $nombre debe ser mayor que la hora de inicio.",
-                ]);
+            $validator = validator([
+                'hora_inicio' => $horaInicio,
+                'hora_fin' => $horaFin,
+            ], [
+                'hora_inicio' => 'required|date_format:H:i',
+                'hora_fin' => 'required|date_format:H:i|after:hora_inicio',
+            ], [
+                'hora_inicio.required' => "Indica la hora de inicio para $nombre.",
+                'hora_inicio.date_format' => "La hora de inicio de $nombre no es válida.",
+                'hora_fin.required' => "Indica la hora de fin para $nombre.",
+                'hora_fin.date_format' => "La hora de fin de $nombre no es válida.",
+                'hora_fin.after' => "La hora de fin de $nombre debe ser mayor que la hora de inicio.",
+            ]);
 
-                if ($validator->fails()) {
-                    foreach ($validator->errors()->messages() as $field => $messages) {
-                        $errors["dias.$dia.$field"] = $messages;
-                    }
+            if ($validator->fails()) {
+                foreach ($validator->errors()->messages() as $field => $messages) {
+                    $errors["dias.$dia.$field"] = $messages;
                 }
             }
 
@@ -285,8 +274,14 @@ class DisponibilidadController extends Controller
                 ->orderBy('hora_inicio')
                 ->orderBy('id')
                 ->get()
-                ->groupBy('dia_semana')
             : collect();
+
+        return $this->buildSemanaFromRegistros($registros);
+    }
+
+    private function buildSemanaFromRegistros(Collection $registros): array
+    {
+        $registros = $registros->groupBy('dia_semana');
 
         $semana = [];
 

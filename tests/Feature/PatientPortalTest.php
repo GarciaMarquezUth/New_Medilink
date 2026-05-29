@@ -8,12 +8,20 @@ use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Servicio;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PatientPortalTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     public function test_patient_portal_is_public_and_lists_available_slots(): void
     {
@@ -47,6 +55,62 @@ class PatientPortalTest extends TestCase
             ->assertOk()
             ->assertSee($servicio->nombre)
             ->assertDontSee($otroServicio->nombre);
+    }
+
+    public function test_patient_portal_returns_services_dates_and_slots_as_json(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $medico = $this->createMedico('Doctor Json');
+        $otroMedico = $this->createMedico('Doctor Json Otro');
+        $servicio = $this->createServicio(30, $medico);
+        $otroServicio = $this->createServicio(45, $otroMedico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->getJson(route('portal-citas.servicios', $medico))
+            ->assertOk()
+            ->assertJsonPath('servicios.0.id', $servicio->id)
+            ->assertJsonMissing(['id' => $otroServicio->id]);
+
+        $this->getJson(route('portal-citas.fechas', [$medico, $servicio]))
+            ->assertOk()
+            ->assertJsonPath('fechas.0.value', '2026-06-01')
+            ->assertJsonPath('fechas.0.label', 'Lunes 1 junio');
+
+        $this->getJson(route('portal-citas.horarios', [$medico, $servicio, '2026-06-01']))
+            ->assertOk()
+            ->assertJsonPath('horarios.0.value', '2026-06-01T08:00')
+            ->assertJsonPath('horarios.0.ends_at', '08:30');
+    }
+
+    public function test_patient_portal_dates_only_include_days_where_service_fits(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $medico = $this->createMedico('Doctor Duracion');
+        $servicio = $this->createServicio(90, $medico);
+
+        Disponibilidad::create([
+            'medico_id' => $medico->id,
+            'dia_semana' => 1,
+            'hora_inicio' => '08:00',
+            'hora_fin' => '09:00',
+            'activo' => true,
+        ]);
+
+        Disponibilidad::create([
+            'medico_id' => $medico->id,
+            'dia_semana' => 2,
+            'hora_inicio' => '08:00',
+            'hora_fin' => '10:00',
+            'activo' => true,
+        ]);
+
+        $this->getJson(route('portal-citas.fechas', [$medico, $servicio]))
+            ->assertOk()
+            ->assertJsonMissing(['value' => '2026-06-01'])
+            ->assertJsonPath('fechas.0.value', '2026-06-02')
+            ->assertJsonPath('fechas.0.label', 'Martes 2 junio');
     }
 
     public function test_patient_portal_shows_message_when_medico_has_no_services(): void

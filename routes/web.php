@@ -21,6 +21,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Portal publico para solicitud de citas
 Route::get('/portal-citas', [PortalCitaController::class, 'create'])->name('portal-citas.index');
+Route::get('/portal-citas/medicos/{medico}/servicios', [PortalCitaController::class, 'serviciosPorMedico'])->name('portal-citas.servicios');
+Route::get('/portal-citas/medicos/{medico}/servicios/{servicio}/fechas', [PortalCitaController::class, 'fechasDisponibles'])->name('portal-citas.fechas');
+Route::get('/portal-citas/medicos/{medico}/servicios/{servicio}/fechas/{fecha}/horarios', [PortalCitaController::class, 'horariosDisponibles'])
+    ->where('fecha', '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+    ->name('portal-citas.horarios');
 Route::post('/portal-citas', [PortalCitaController::class, 'store'])->name('portal-citas.store');
 Route::middleware('auth')->group(function () {
     Route::get('/portal-citas/confirmar', [PortalCitaController::class, 'confirm'])->name('portal-citas.confirm');
@@ -46,6 +51,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middlewareFor(['create', 'store'], 'permission:medicos.crear')
             ->middlewareFor(['edit', 'update'], 'permission:medicos.editar')
             ->middlewareFor('destroy', 'permission:medicos.eliminar');
+
+        Route::middleware('role:medico')->group(function () {
+            Route::get('mi-perfil-medico', [MedicoController::class, 'profile'])->name('medicos.profile');
+            Route::put('mi-perfil-medico', [MedicoController::class, 'updateProfile'])->name('medicos.profile.update');
+        });
 
         Route::resource('pacientes', PacienteController::class)
             ->except(['show'])

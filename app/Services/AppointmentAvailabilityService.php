@@ -89,6 +89,34 @@ class AppointmentAvailabilityService
         return array_values($slots);
     }
 
+    public function availableFutureSlots(int $medicoId, string $fecha, int $servicioId, ?int $ignoreCitaId = null, int $stepMinutes = 15): array
+    {
+        return array_values(array_filter(
+            $this->availableSlots($medicoId, $fecha, $servicioId, $ignoreCitaId, $stepMinutes),
+            fn (array $slot) => Carbon::parse(str_replace('T', ' ', $slot['value']))->isFuture()
+        ));
+    }
+
+    public function availableDates(int $medicoId, int $servicioId, int $daysAhead = 30, int $limit = 8, ?Carbon $from = null, ?int $ignoreCitaId = null, int $stepMinutes = 15): array
+    {
+        $startDate = ($from ?: Carbon::today())->copy()->startOfDay();
+        $dates = [];
+
+        for ($offset = 0; $offset <= $daysAhead && count($dates) < $limit; $offset++) {
+            $date = $startDate->copy()->addDays($offset);
+            $slots = $this->availableFutureSlots($medicoId, $date->toDateString(), $servicioId, $ignoreCitaId, $stepMinutes);
+
+            if ($slots !== []) {
+                $dates[] = [
+                    'date' => $date->toDateString(),
+                    'slots_count' => count($slots),
+                ];
+            }
+        }
+
+        return $dates;
+    }
+
     public function rangeFor(string $fechaHora, Servicio $servicio): array
     {
         $inicio = Carbon::parse(str_replace('T', ' ', $fechaHora));

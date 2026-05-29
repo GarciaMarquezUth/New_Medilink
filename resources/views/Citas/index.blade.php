@@ -70,8 +70,11 @@
                                     <p class="font-bold text-slate-950">{{ $cita->paciente->nombre }} {{ $cita->paciente->apellido }}</p>
                                     <p class="text-sm font-medium text-slate-500">{{ $cita->motivo }}</p>
                                 </td>
-                                <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-700">
-                                    {{ $cita->medico->nombre }} {{ $cita->medico->apellido }}
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <x-medico-avatar :medico="$cita->medico" class="h-10 w-10 rounded-2xl" text-class="text-xs" />
+                                        <span class="text-sm font-semibold text-slate-700">{{ $cita->medico->nombre }} {{ $cita->medico->apellido }}</span>
+                                    </div>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-slate-700">
                                     @if($cita->servicio)

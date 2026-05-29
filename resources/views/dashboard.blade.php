@@ -30,7 +30,7 @@
 
         $citasCanceladas = $citasPaciente->where('estado', \App\Models\Cita::ESTADO_CANCELADA)->count();
     } elseif ($isMedicoDashboard) {
-        $medico = \App\Models\Medico::where('user_id', $user->id)->first();
+        $medico = \App\Models\Medico::with('servicios')->where('user_id', $user->id)->first();
         $citasMedico = $medico
             ? \App\Models\Cita::with(['paciente', 'servicio'])
                 ->where('medico_id', $medico->id)
@@ -185,7 +185,10 @@
                                                 {{ $estadoLabels[$cita->estado] ?? str_replace('_', ' ', $cita->estado) }}
                                             </span>
                                         </div>
-                                        <p class="mt-2 text-sm font-semibold text-slate-700">{{ $cita->medico?->nombre }} {{ $cita->medico?->apellido }}</p>
+                                        <div class="mt-2 flex items-center gap-3">
+                                            <x-medico-avatar :medico="$cita->medico" class="h-9 w-9 rounded-xl" text-class="text-xs" />
+                                            <p class="text-sm font-semibold text-slate-700">{{ $cita->medico?->nombre }} {{ $cita->medico?->apellido }}</p>
+                                        </div>
                                         <p class="mt-1 text-sm font-medium text-slate-500">{{ $cita->servicio?->nombre ?? 'Servicio no especificado' }} @if($cita->servicio) · {{ $cita->servicio->duracion_minutos }} min @endif</p>
                                         <p class="mt-2 text-sm font-medium text-slate-600">{{ $cita->motivo }}</p>
                                     </div>
@@ -222,7 +225,10 @@
                                     <div>
                                         <p class="text-sm font-extrabold text-slate-950">{{ $cita->fecha_hora->format('d/m/Y H:i') }}</p>
                                         <p class="mt-1 text-sm font-medium text-slate-500">{{ $cita->servicio?->nombre ?? 'Servicio no especificado' }}</p>
-                                        <p class="mt-1 text-xs font-semibold text-slate-400">{{ $cita->medico?->nombre }} {{ $cita->medico?->apellido }}</p>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <x-medico-avatar :medico="$cita->medico" class="h-7 w-7 rounded-lg" text-class="text-[10px]" />
+                                            <p class="text-xs font-semibold text-slate-400">{{ $cita->medico?->nombre }} {{ $cita->medico?->apellido }}</p>
+                                        </div>
                                     </div>
                                     <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold ring-1 {{ $estadoClasses($cita->estado) }}">
                                         {{ $estadoLabels[$cita->estado] ?? str_replace('_', ' ', $cita->estado) }}
@@ -252,6 +258,21 @@
                 <div class="rounded-3xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800 shadow-sm">
                     Tu usuario médico aún no está vinculado a un registro de médico. Solicita a administración que vincule tu cuenta para ver tu agenda.
                 </div>
+            @else
+                <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/60">
+                    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-4">
+                            <x-medico-avatar :medico="$medico" class="h-20 w-20 rounded-full" text-class="text-2xl" />
+                            <div>
+                                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Mi perfil</p>
+                                <h3 class="mt-1 text-xl font-black text-slate-950">Dr. {{ $medico->nombre }} {{ $medico->apellido }}</h3>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">{{ $medico->especialidad }}</p>
+                                <p class="mt-2 text-xs font-bold text-violet-600">{{ $medico->servicios->count() }} servicios asignados</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('medicos.profile') }}" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">Cambiar foto y datos</a>
+                    </div>
+                </section>
             @endif
 
             <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

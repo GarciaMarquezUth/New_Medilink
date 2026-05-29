@@ -9,6 +9,7 @@ use App\Models\Servicio;
 use App\Models\User;
 use App\Services\AppointmentAvailabilityService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,12 +26,17 @@ class PortalCitaController extends Controller
 
     public function create(Request $request): View
     {
-        $medicos = Medico::orderBy('nombre')->orderBy('apellido')->get();
+        $medicos = Medico::with(['servicios' => fn ($query) => $query->where('activo', true)->orderBy('nombre')])
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->get();
 
         $selectedMedicoId = $request->old('medico_id', $request->query('medico_id'));
         $selectedServicioId = $request->old('servicio_id', $request->query('servicio_id'));
         $selectedFecha = $request->old('fecha', $request->query('fecha'));
         $servicios = collect();
+        $serviciosIniciales = collect();
+        $fechasDisponibles = [];
         $horarios = [];
 
         if ($selectedMedicoId && $medicos->contains('id', (int) $selectedMedicoId)) {
@@ -46,6 +52,10 @@ class PortalCitaController extends Controller
             $selectedFecha = null;
         }
 
+        $serviciosIniciales = $servicios
+            ->map(fn (Servicio $servicio) => $this->formatServicio($servicio))
+            ->values();
+
         $slotRequest = validator([
             'medico_id' => $selectedMedicoId,
             'servicio_id' => $selectedServicioId,
@@ -56,11 +66,65 @@ class PortalCitaController extends Controller
             'fecha' => ['nullable', 'date', 'after_or_equal:today'],
         ]);
 
-        if ($selectedMedicoId && $selectedServicioId && $selectedFecha && ! $slotRequest->fails()) {
-            $horarios = $this->availableFutureSlots((int) $selectedMedicoId, $selectedFecha, (int) $selectedServicioId);
+        if ($selectedMedicoId && $selectedServicioId && ! $slotRequest->fails()) {
+            $fechasDisponibles = $this->availableDatesForView((int) $selectedMedicoId, (int) $selectedServicioId);
+
+            if ($selectedFecha) {
+                $horarios = $this->availability->availableFutureSlots((int) $selectedMedicoId, $selectedFecha, (int) $selectedServicioId);
+            }
         }
 
-        return view('PortalCitas.create', compact('medicos', 'servicios', 'selectedMedicoId', 'selectedServicioId', 'selectedFecha', 'horarios'));
+        $serviciosDestacados = $selectedMedicoId
+            ? $servicios->take(4)
+            : Servicio::where('activo', true)
+                ->where('duracion_minutos', '>=', 5)
+                ->orderBy('nombre')
+                ->limit(4)
+                ->get();
+
+        return view('PortalCitas.create', compact('medicos', 'servicios', 'serviciosIniciales', 'serviciosDestacados', 'fechasDisponibles', 'selectedMedicoId', 'selectedServicioId', 'selectedFecha', 'horarios'));
+    }
+
+    public function serviciosPorMedico(Medico $medico): JsonResponse
+    {
+        return response()->json([
+            'servicios' => $this->serviciosDisponiblesParaMedico($medico->id)
+                ->map(fn (Servicio $servicio) => $this->formatServicio($servicio))
+                ->values(),
+        ]);
+    }
+
+    public function fechasDisponibles(Request $request, Medico $medico, Servicio $servicio): JsonResponse
+    {
+        $this->ensureActiveServiceForMedico($medico->id, $servicio->id);
+
+        $validated = validator($request->only(['dias', 'limite']), [
+            'dias' => ['nullable', 'integer', 'min:1', 'max:90'],
+            'limite' => ['nullable', 'integer', 'min:1', 'max:20'],
+        ])->validate();
+
+        return response()->json([
+            'fechas' => $this->availableDatesForView(
+                $medico->id,
+                $servicio->id,
+                (int) ($validated['dias'] ?? 30),
+                (int) ($validated['limite'] ?? 8),
+            ),
+        ]);
+    }
+
+    public function horariosDisponibles(Medico $medico, Servicio $servicio, string $fecha): JsonResponse
+    {
+        $this->ensureActiveServiceForMedico($medico->id, $servicio->id);
+
+        validator(['fecha' => $fecha], [
+            'fecha' => ['required', 'date', 'after_or_equal:today'],
+        ])->validate();
+
+        return response()->json([
+            'fecha' => $fecha,
+            'horarios' => $this->availability->availableFutureSlots($medico->id, $fecha, $servicio->id),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -245,10 +309,7 @@ class PortalCitaController extends Controller
 
     private function availableFutureSlots(int $medicoId, string $fecha, int $servicioId): array
     {
-        return array_values(array_filter(
-            $this->availability->availableSlots($medicoId, $fecha, $servicioId),
-            fn (array $slot) => Carbon::parse(str_replace('T', ' ', $slot['value']))->isFuture()
-        ));
+        return $this->availability->availableFutureSlots($medicoId, $fecha, $servicioId);
     }
 
     private function serviciosDisponiblesParaMedico(int $medicoId)
@@ -258,6 +319,78 @@ class PortalCitaController extends Controller
             ->whereHas('medicos', fn ($query) => $query->where('medicos.id', $medicoId))
             ->orderBy('nombre')
             ->get();
+    }
+
+    private function availableDatesForView(int $medicoId, int $servicioId, int $daysAhead = 30, int $limit = 8): array
+    {
+        return array_map(function (array $availableDate) {
+            $date = Carbon::parse($availableDate['date']);
+
+            return [
+                'value' => $availableDate['date'],
+                'label' => $this->formatDateLabel($date),
+                'slots_count' => $availableDate['slots_count'],
+            ];
+        }, $this->availability->availableDates($medicoId, $servicioId, $daysAhead, $limit));
+    }
+
+    private function ensureActiveServiceForMedico(int $medicoId, int $servicioId): void
+    {
+        $servicio = Servicio::whereKey($servicioId)
+            ->where('activo', true)
+            ->where('duracion_minutos', '>=', 5)
+            ->first();
+
+        if (! $servicio) {
+            throw ValidationException::withMessages([
+                'servicio_id' => 'Selecciona un servicio activo.',
+            ]);
+        }
+
+        $this->availability->ensureMedicoCanPerformService($medicoId, $servicioId);
+    }
+
+    private function formatServicio(Servicio $servicio): array
+    {
+        $precio = $servicio->precio !== null ? '$'.number_format((float) $servicio->precio, 2) : null;
+
+        return [
+            'id' => $servicio->id,
+            'nombre' => $servicio->nombre,
+            'duracion_minutos' => $servicio->duracion_minutos,
+            'precio' => $servicio->precio !== null ? (float) $servicio->precio : null,
+            'label' => $servicio->nombre.' - '.$servicio->duracion_minutos.' min'.($precio ? ' - '.$precio : ''),
+        ];
+    }
+
+    private function formatDateLabel(Carbon $date): string
+    {
+        $weekdays = [
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+            7 => 'Domingo',
+        ];
+
+        $months = [
+            1 => 'enero',
+            2 => 'febrero',
+            3 => 'marzo',
+            4 => 'abril',
+            5 => 'mayo',
+            6 => 'junio',
+            7 => 'julio',
+            8 => 'agosto',
+            9 => 'septiembre',
+            10 => 'octubre',
+            11 => 'noviembre',
+            12 => 'diciembre',
+        ];
+
+        return $weekdays[$date->dayOfWeekIso].' '.$date->day.' '.$months[$date->month];
     }
 
     private function validateSelectedDateTime(string $fecha, string $horario): Carbon
