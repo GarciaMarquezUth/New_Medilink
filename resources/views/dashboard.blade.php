@@ -482,28 +482,47 @@
                     </div>
 
                     <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        @hasanyrole(['admin', 'recepcionista'])
+                        @can('citas.crear')
                             <a href="{{ route('citas.create') }}" class="rounded-3xl border border-violet-100 bg-violet-50 p-5 transition hover:-translate-y-1 hover:bg-violet-100">
                                 <p class="text-sm font-bold text-violet-700">Nueva cita</p>
                                 <p class="mt-2 text-xs font-medium text-violet-700/70">Agenda o reagenda consultas.</p>
                             </a>
+                        @endcan
+
+                        @can('pacientes.crear')
                             <a href="{{ route('pacientes.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                                 <p class="text-sm font-bold text-slate-800">Nuevo paciente</p>
                                 <p class="mt-2 text-xs font-medium text-slate-500">Registra datos clínicos básicos.</p>
                             </a>
+                        @endcan
+
+                        @can('medicos.crear')
                             <a href="{{ route('medicos.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                                 <p class="text-sm font-bold text-slate-800">Nuevo médico</p>
                                 <p class="mt-2 text-xs font-medium text-slate-500">Vincula usuarios médicos.</p>
                             </a>
+                        @endcan
+
+                        @can('servicios.crear')
                             <a href="{{ route('servicios.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                                 <p class="text-sm font-bold text-slate-800">Nuevo servicio</p>
                                 <p class="mt-2 text-xs font-medium text-slate-500">Define duración de consultas.</p>
                             </a>
+                        @endcan
+
+                        @can('disponibilidades.crear')
                             <a href="{{ route('disponibilidades.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                                 <p class="text-sm font-bold text-slate-800">Nuevo horario</p>
                                 <p class="mt-2 text-xs font-medium text-slate-500">Configura disponibilidad médica.</p>
                             </a>
-                        @endhasanyrole
+                        @endcan
+
+                        @role('admin')
+                            <a href="{{ route('permisos.index') }}" class="rounded-3xl border border-violet-100 bg-white p-5 transition hover:-translate-y-1 hover:bg-violet-50">
+                                <p class="text-sm font-bold text-violet-700">Permisos</p>
+                                <p class="mt-2 text-xs font-medium text-slate-500">Configura accesos por rol.</p>
+                            </a>
+                        @endrole
                     </div>
                 </div>
 

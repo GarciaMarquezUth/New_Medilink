@@ -6,6 +6,15 @@
         </div>
     </x-slot>
 
+    @php
+        $serviciosPorMedico = $medicos->mapWithKeys(fn ($medico) => [
+            (string) $medico->id => $medico->servicios->map(fn ($servicio) => [
+                'id' => (string) $servicio->id,
+                'label' => $servicio->nombre.' · '.$servicio->duracion_minutos.' min'.($servicio->precio !== null ? ' · $'.number_format((float) $servicio->precio, 2) : ''),
+            ])->values()->all(),
+        ])->all();
+    @endphp
+
     <form action="{{ route('citas.store') }}" method="POST" class="mx-auto max-w-4xl space-y-6">
         @csrf
 
@@ -29,8 +38,9 @@
                 <div>
                     <x-input-label for="medico_id" value="Médico" />
                     <select id="medico_id" name="medico_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
+                        <option value="">Selecciona un médico</option>
                         @foreach($medicos as $m)
-                            <option value="{{ $m->id }}" {{ (int) old('medico_id') === $m->id ? 'selected' : '' }}>{{ $m->nombre }} {{ $m->apellido }}</option>
+                            <option value="{{ $m->id }}" {{ (int) $selectedMedicoId === $m->id ? 'selected' : '' }}>{{ $m->nombre }} {{ $m->apellido }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('medico_id')" />
@@ -38,20 +48,21 @@
 
                 <div>
                     <x-input-label for="servicio_id" value="Servicio" />
-                    <select id="servicio_id" name="servicio_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required>
-                        <option value="">Selecciona un servicio</option>
+                    <select id="servicio_id" name="servicio_id" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
+                        <option value="">{{ $selectedMedicoId ? 'Selecciona un servicio' : 'Selecciona primero un médico' }}</option>
                         @foreach($servicios as $servicio)
-                            <option value="{{ $servicio->id }}" {{ (int) old('servicio_id') === $servicio->id ? 'selected' : '' }}>
+                            <option value="{{ $servicio->id }}" {{ (int) $selectedServicioId === $servicio->id ? 'selected' : '' }}>
                                 {{ $servicio->nombre }} · {{ $servicio->duracion_minutos }} min @if($servicio->precio !== null) · ${{ number_format((float) $servicio->precio, 2) }} @endif
                             </option>
                         @endforeach
                     </select>
+                    <p id="sin-servicios-medico" class="{{ $selectedMedicoId && $servicios->isEmpty() ? '' : 'hidden' }} mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">Este médico no tiene servicios disponibles.</p>
                     <x-input-error :messages="$errors->get('servicio_id')" />
                 </div>
 
                 <div>
                     <x-input-label for="fecha_hora" value="Fecha y hora" />
-                    <x-text-input id="fecha_hora" type="datetime-local" name="fecha_hora" value="{{ old('fecha_hora') }}" class="mt-2" required />
+                    <x-text-input id="fecha_hora" type="datetime-local" name="fecha_hora" value="{{ old('fecha_hora') }}" class="mt-2" required :disabled="! $selectedMedicoId || ! $selectedServicioId" />
                     <x-input-error :messages="$errors->get('fecha_hora')" />
                 </div>
 
@@ -68,4 +79,49 @@
             <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">Guardar cita</button>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const serviciosPorMedico = @json($serviciosPorMedico);
+            const medicoSelect = document.getElementById('medico_id');
+            const servicioSelect = document.getElementById('servicio_id');
+            const fechaInput = document.getElementById('fecha_hora');
+            const sinServicios = document.getElementById('sin-servicios-medico');
+            const initialServicioId = @json((string) $selectedServicioId);
+
+            const renderServicios = (selectedServicioId = '', clearDate = false) => {
+                const servicios = serviciosPorMedico[medicoSelect.value] || [];
+
+                servicioSelect.innerHTML = '';
+                servicioSelect.append(new Option(medicoSelect.value ? 'Selecciona un servicio' : 'Selecciona primero un médico', ''));
+
+                servicios.forEach((servicio) => {
+                    const option = new Option(servicio.label, servicio.id);
+                    option.selected = servicio.id === String(selectedServicioId);
+                    servicioSelect.append(option);
+                });
+
+                servicioSelect.disabled = ! medicoSelect.value || servicios.length === 0;
+                sinServicios.classList.toggle('hidden', ! medicoSelect.value || servicios.length > 0);
+
+                if (fechaInput) {
+                    if (clearDate) {
+                        fechaInput.value = '';
+                    }
+
+                    fechaInput.disabled = ! servicioSelect.value;
+                }
+            };
+
+            medicoSelect.addEventListener('change', () => renderServicios('', true));
+            servicioSelect.addEventListener('change', () => {
+                if (fechaInput) {
+                    fechaInput.value = '';
+                    fechaInput.disabled = ! servicioSelect.value;
+                }
+            });
+
+            renderServicios(initialServicioId, false);
+        });
+    </script>
 </x-app-layout>

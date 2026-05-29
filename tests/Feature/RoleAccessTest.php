@@ -216,7 +216,7 @@ class RoleAccessTest extends TestCase
         $recepcionista = $this->userWithRole('recepcionista');
         $medico = $this->createMedico('Doctor Gestion');
         $paciente = $this->createPaciente('Paciente Gestion');
-        $servicio = $this->createServicio();
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $this->actingAs($admin)
@@ -249,12 +249,34 @@ class RoleAccessTest extends TestCase
         ]);
     }
 
+    public function test_citas_reject_service_not_assigned_to_selected_medico(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Valido');
+        $otroMedico = $this->createMedico('Doctor Servicio Ajeno');
+        $paciente = $this->createPaciente('Paciente Servicio Ajeno');
+        $servicioAjeno = $this->createServicio(30, $otroMedico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($admin)
+            ->post(route('citas.store'), [
+                'medico_id' => $medico->id,
+                'paciente_id' => $paciente->id,
+                'servicio_id' => $servicioAjeno->id,
+                'fecha_hora' => '2026-06-01T09:00',
+                'motivo' => 'Consulta invalida',
+            ])
+            ->assertSessionHasErrors('servicio_id');
+
+        $this->assertDatabaseCount('citas', 0);
+    }
+
     public function test_citas_must_be_inside_medico_availability(): void
     {
         $admin = $this->userWithRole('admin');
         $medico = $this->createMedico('Doctor Sin Horario');
         $paciente = $this->createPaciente('Paciente Sin Horario');
-        $servicio = $this->createServicio();
+        $servicio = $this->createServicio(30, $medico);
 
         $this->actingAs($admin)
             ->post(route('citas.store'), [
@@ -275,7 +297,7 @@ class RoleAccessTest extends TestCase
         $medico = $this->createMedico('Doctor Ocupado');
         $paciente = $this->createPaciente('Paciente Original');
         $otroPaciente = $this->createPaciente('Paciente Traslape');
-        $servicio = $this->createServicio(60);
+        $servicio = $this->createServicio(60, $medico);
         $this->createDisponibilidad($medico, 1);
 
         Cita::create([
@@ -387,7 +409,7 @@ class RoleAccessTest extends TestCase
         return Cita::create([
             'medico_id' => $medico->id,
             'paciente_id' => $paciente->id,
-            'servicio_id' => $this->createServicio()->id,
+            'servicio_id' => $this->createServicio(30, $medico)->id,
             'fecha_hora' => '2026-06-01 09:00:00',
             'motivo' => 'Consulta',
             'estado' => Cita::ESTADO_AGENDADA,
@@ -421,25 +443,33 @@ class RoleAccessTest extends TestCase
 
     private function createCitaForPaciente(Paciente $paciente, string $motivo): Cita
     {
+        $medico = $this->createMedico('Doctor Paciente');
+
         return Cita::create([
-            'medico_id' => $this->createMedico('Doctor Paciente')->id,
+            'medico_id' => $medico->id,
             'paciente_id' => $paciente->id,
-            'servicio_id' => $this->createServicio()->id,
+            'servicio_id' => $this->createServicio(30, $medico)->id,
             'fecha_hora' => '2026-06-01 09:00:00',
             'motivo' => $motivo,
             'estado' => Cita::ESTADO_AGENDADA,
         ]);
     }
 
-    private function createServicio(int $duracion = 30): Servicio
+    private function createServicio(int $duracion = 30, ?Medico $medico = null): Servicio
     {
-        return Servicio::create([
+        $servicio = Servicio::create([
             'nombre' => 'Consulta '.$duracion.' minutos',
             'descripcion' => 'Servicio de prueba',
             'duracion_minutos' => $duracion,
             'precio' => 100,
             'activo' => true,
         ]);
+
+        if ($medico) {
+            $medico->servicios()->attach($servicio->id);
+        }
+
+        return $servicio;
     }
 
     private function createDisponibilidad(Medico $medico, int $diaSemana): Disponibilidad

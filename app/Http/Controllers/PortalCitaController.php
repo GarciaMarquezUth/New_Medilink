@@ -26,15 +26,25 @@ class PortalCitaController extends Controller
     public function create(Request $request): View
     {
         $medicos = Medico::orderBy('nombre')->orderBy('apellido')->get();
-        $servicios = Servicio::where('activo', true)
-            ->where('duracion_minutos', '>=', 5)
-            ->orderBy('nombre')
-            ->get();
 
         $selectedMedicoId = $request->old('medico_id', $request->query('medico_id'));
         $selectedServicioId = $request->old('servicio_id', $request->query('servicio_id'));
         $selectedFecha = $request->old('fecha', $request->query('fecha'));
+        $servicios = collect();
         $horarios = [];
+
+        if ($selectedMedicoId && $medicos->contains('id', (int) $selectedMedicoId)) {
+            $servicios = $this->serviciosDisponiblesParaMedico((int) $selectedMedicoId);
+        } else {
+            $selectedMedicoId = null;
+            $selectedServicioId = null;
+            $selectedFecha = null;
+        }
+
+        if ($selectedServicioId && ! $servicios->contains('id', (int) $selectedServicioId)) {
+            $selectedServicioId = null;
+            $selectedFecha = null;
+        }
 
         $slotRequest = validator([
             'medico_id' => $selectedMedicoId,
@@ -90,10 +100,17 @@ class PortalCitaController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $payload = $this->withAuthenticatedPatientData(
-            $this->validateAppointmentPayload($payload, requirePatientFields: false),
-            $user,
-        );
+        try {
+            $payload = $this->withAuthenticatedPatientData(
+                $this->validateAppointmentPayload($payload, requirePatientFields: false),
+                $user,
+            );
+        } catch (ValidationException $exception) {
+            return redirect()->route('portal-citas.index')
+                ->withErrors($exception->errors())
+                ->withInput($payload);
+        }
+
         $medico = Medico::find($payload['medico_id']);
         $servicio = Servicio::find($payload['servicio_id']);
 
@@ -138,7 +155,7 @@ class PortalCitaController extends Controller
                 'telefono' => ['nullable', 'string', 'max:20'],
             ];
 
-        return validator($payload, [
+        $validated = validator($payload, [
             'medico_id' => ['required', 'integer', 'exists:medicos,id'],
             'servicio_id' => ['required', 'integer', Rule::exists('servicios', 'id')->where(fn ($query) => $query->where('activo', true)->where('duracion_minutos', '>=', 5))],
             'fecha' => ['required', 'date', 'after_or_equal:today'],
@@ -146,6 +163,10 @@ class PortalCitaController extends Controller
             'motivo' => ['required', 'string', 'max:255'],
             ...$patientRules,
         ])->validate();
+
+        $this->availability->ensureMedicoCanPerformService((int) $validated['medico_id'], (int) $validated['servicio_id']);
+
+        return $validated;
     }
 
     private function createAppointment(array $payload, User $user): Cita
@@ -228,6 +249,15 @@ class PortalCitaController extends Controller
             $this->availability->availableSlots($medicoId, $fecha, $servicioId),
             fn (array $slot) => Carbon::parse(str_replace('T', ' ', $slot['value']))->isFuture()
         ));
+    }
+
+    private function serviciosDisponiblesParaMedico(int $medicoId)
+    {
+        return Servicio::where('activo', true)
+            ->where('duracion_minutos', '>=', 5)
+            ->whereHas('medicos', fn ($query) => $query->where('medicos.id', $medicoId))
+            ->orderBy('nombre')
+            ->get();
     }
 
     private function validateSelectedDateTime(string $fecha, string $horario): Carbon

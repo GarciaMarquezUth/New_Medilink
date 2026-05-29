@@ -111,7 +111,7 @@
                         <p class="inline-flex w-fit rounded-full bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700">Horarios cada 15 minutos</p>
                     </div>
 
-                    <form action="{{ route('portal-citas.index') }}" method="GET" class="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+                    <form id="portal-cita-search" action="{{ route('portal-citas.index') }}" method="GET" class="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
                         <div>
                             <label for="medico_id" class="block text-sm font-extrabold text-slate-800">Médico</label>
                             <select id="medico_id" name="medico_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
@@ -129,14 +129,17 @@
 
                         <div>
                             <label for="servicio_id" class="block text-sm font-extrabold text-slate-800">Servicio</label>
-                            <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
-                                <option value="">Selecciona servicio</option>
+                            <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
+                                <option value="">{{ $selectedMedicoId ? 'Selecciona servicio' : 'Selecciona primero un médico' }}</option>
                                 @foreach ($servicios as $servicio)
                                     <option value="{{ $servicio->id }}" {{ (int) $selectedServicioId === $servicio->id ? 'selected' : '' }}>
                                         {{ $servicio->nombre }} - {{ $servicio->duracion_minutos }} min @if ($servicio->precio !== null) - ${{ number_format((float) $servicio->precio, 2) }} @endif
                                     </option>
                                 @endforeach
                             </select>
+                            @if ($selectedMedicoId && $servicios->isEmpty())
+                                <p class="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">Este médico no tiene servicios disponibles.</p>
+                            @endif
                             @error('servicio_id')
                                 <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                             @enderror
@@ -144,7 +147,7 @@
 
                         <div>
                             <label for="fecha" class="block text-sm font-extrabold text-slate-800">Fecha</label>
-                            <input id="fecha" type="date" name="fecha" min="{{ now()->toDateString() }}" value="{{ $selectedFecha }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
+                            <input id="fecha" type="date" name="fecha" min="{{ now()->toDateString() }}" value="{{ $selectedFecha }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || ! $selectedServicioId ? 'disabled' : '' }}>
                             @error('fecha')
                                 <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                             @enderror
@@ -300,5 +303,37 @@
                 @endif
             </div>
         </main>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('portal-cita-search');
+                const medicoSelect = document.getElementById('medico_id');
+                const servicioSelect = document.getElementById('servicio_id');
+
+                medicoSelect?.addEventListener('change', () => {
+                    const url = new URL(form.action, window.location.origin);
+
+                    if (medicoSelect.value) {
+                        url.searchParams.set('medico_id', medicoSelect.value);
+                    }
+
+                    window.location.href = url.toString();
+                });
+
+                servicioSelect?.addEventListener('change', () => {
+                    const url = new URL(form.action, window.location.origin);
+
+                    if (medicoSelect.value) {
+                        url.searchParams.set('medico_id', medicoSelect.value);
+                    }
+
+                    if (servicioSelect.value) {
+                        url.searchParams.set('servicio_id', servicioSelect.value);
+                    }
+
+                    window.location.href = url.toString();
+                });
+            });
+        </script>
     </body>
 </html>

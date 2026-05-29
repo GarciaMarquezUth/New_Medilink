@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Cita;
 use App\Models\Disponibilidad;
+use App\Models\Medico;
 use App\Models\Servicio;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +24,8 @@ class AppointmentAvailabilityService
                 'servicio_id' => 'Selecciona un servicio activo.',
             ]);
         }
+
+        $this->ensureMedicoCanPerformService($medicoId, $servicioId);
 
         [$inicio, $fin] = $this->rangeFor($fechaHora, $servicio);
 
@@ -46,6 +49,10 @@ class AppointmentAvailabilityService
         $servicio = Servicio::whereKey($servicioId)->where('activo', true)->first();
 
         if (! $servicio || ! $fecha) {
+            return [];
+        }
+
+        if (! $this->medicoCanPerformService($medicoId, $servicioId)) {
             return [];
         }
 
@@ -88,6 +95,22 @@ class AppointmentAvailabilityService
         $fin = $inicio->copy()->addMinutes($servicio->duracion_minutos);
 
         return [$inicio, $fin];
+    }
+
+    public function ensureMedicoCanPerformService(int $medicoId, int $servicioId): void
+    {
+        if (! $this->medicoCanPerformService($medicoId, $servicioId)) {
+            throw ValidationException::withMessages([
+                'servicio_id' => 'El servicio seleccionado no pertenece al médico seleccionado.',
+            ]);
+        }
+    }
+
+    public function medicoCanPerformService(int $medicoId, int $servicioId): bool
+    {
+        return Medico::whereKey($medicoId)
+            ->whereHas('servicios', fn ($query) => $query->where('servicios.id', $servicioId))
+            ->exists();
     }
 
     public function hasOverlap(int $medicoId, Carbon $inicio, Carbon $fin, ?int $ignoreCitaId = null, bool $lock = false): bool

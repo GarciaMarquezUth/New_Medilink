@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CitaController extends Controller
@@ -24,8 +25,12 @@ class CitaController extends Controller
         $user = Auth::user();
 
         if ($user && $user->hasAnyRole(['admin', 'recepcionista'])) {
+            $this->authorizePermission('citas.ver');
+
             $citas = Cita::with(['medico', 'paciente', 'servicio'])->latest()->get();
         } elseif ($user && $user->hasRole('medico')) {
+            $this->authorizePermission('citas.ver');
+
             $citas = Cita::with(['medico', 'paciente', 'servicio'])
                 ->whereHas('medico', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
@@ -45,28 +50,38 @@ class CitaController extends Controller
         return view('Citas.index', compact('citas', 'estadoLabels', 'estadosOcupantes'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        $this->authorizeCitaManagement();
+        $this->authorizeCitaManagement('citas.crear');
 
-        $medicos = Medico::orderBy('nombre')->get();
+        $medicos = Medico::with(['servicios' => fn ($query) => $query->where('activo', true)->orderBy('nombre')])
+            ->orderBy('nombre')
+            ->get();
         $pacientes = Paciente::orderBy('nombre')->get();
-        $servicios = Servicio::where('activo', true)->orderBy('nombre')->get();
+        $selectedMedicoId = $request->old('medico_id', $request->query('medico_id'));
+        $selectedServicioId = $request->old('servicio_id', $request->query('servicio_id'));
+        $servicios = $this->serviciosActivosParaMedico($selectedMedicoId ? (int) $selectedMedicoId : null);
 
-        return view('Citas.create', compact('medicos', 'pacientes', 'servicios'));
+        if ($selectedServicioId && ! $servicios->contains('id', (int) $selectedServicioId)) {
+            $selectedServicioId = null;
+        }
+
+        return view('Citas.create', compact('medicos', 'pacientes', 'servicios', 'selectedMedicoId', 'selectedServicioId'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeCitaManagement();
+        $this->authorizeCitaManagement('citas.crear');
 
         $validated = $request->validate([
             'medico_id' => 'required|exists:medicos,id',
             'paciente_id' => 'required|exists:pacientes,id',
-            'servicio_id' => 'required|exists:servicios,id',
+            'servicio_id' => ['required', Rule::exists('servicios', 'id')->where(fn ($query) => $query->where('activo', true))],
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
         ]);
+
+        $this->availability->ensureMedicoCanPerformService((int) $validated['medico_id'], (int) $validated['servicio_id']);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
         $validated['estado'] = Cita::ESTADO_AGENDADA;
@@ -85,39 +100,44 @@ class CitaController extends Controller
         return redirect()->route('citas.index')->with('success', 'Cita agendada correctamente.');
     }
 
-    public function edit(int $id): View
+    public function edit(Request $request, int $id): View
     {
-        $this->authorizeCitaManagement();
+        $this->authorizeCitaManagement('citas.editar');
 
         $cita = Cita::findOrFail($id);
-        $medicos = Medico::orderBy('nombre')->get();
+        $medicos = Medico::with(['servicios' => fn ($query) => $query->where('activo', true)->orderBy('nombre')])
+            ->orderBy('nombre')
+            ->get();
         $pacientes = Paciente::orderBy('nombre')->get();
-        $servicios = Servicio::where(function ($query) use ($cita) {
-            $query->where('activo', true);
+        $selectedMedicoId = $request->old('medico_id', $request->query('medico_id', $cita->medico_id));
+        $selectedServicioId = $request->old('servicio_id', $cita->servicio_id);
+        $servicios = $this->serviciosActivosParaMedico($selectedMedicoId ? (int) $selectedMedicoId : null);
 
-            if ($cita->servicio_id) {
-                $query->orWhereKey($cita->servicio_id);
-            }
-        })->orderBy('nombre')->get();
+        if ($selectedServicioId && ! $servicios->contains('id', (int) $selectedServicioId)) {
+            $selectedServicioId = null;
+        }
+
         $estados = Cita::estados();
 
-        return view('Citas.edit', compact('cita', 'medicos', 'pacientes', 'servicios', 'estados'));
+        return view('Citas.edit', compact('cita', 'medicos', 'pacientes', 'servicios', 'estados', 'selectedMedicoId', 'selectedServicioId'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $this->authorizeCitaManagement();
+        $this->authorizeCitaManagement('citas.editar');
 
         $cita = Cita::findOrFail($id);
 
         $validated = $request->validate([
             'medico_id' => 'required|exists:medicos,id',
             'paciente_id' => 'required|exists:pacientes,id',
-            'servicio_id' => 'required|exists:servicios,id',
+            'servicio_id' => ['required', Rule::exists('servicios', 'id')->where(fn ($query) => $query->where('activo', true))],
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
             'estado' => 'required|in:'.implode(',', array_keys(Cita::estados())),
         ]);
+
+        $this->availability->ensureMedicoCanPerformService((int) $validated['medico_id'], (int) $validated['servicio_id']);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
 
@@ -140,7 +160,7 @@ class CitaController extends Controller
 
     public function destroy(int $id): RedirectResponse
     {
-        $this->authorizeCitaManagement();
+        $this->authorizeCitaManagement('citas.eliminar');
 
         Cita::findOrFail($id)->delete();
 
@@ -184,14 +204,36 @@ class CitaController extends Controller
         return back()->with('success', 'Cita cancelada correctamente.');
     }
 
-    private function authorizeCitaManagement(): void
+    private function authorizeCitaManagement(string $permission): void
     {
         /** @var User|null $user */
         $user = Auth::user();
 
-        if (! $user || ! $user->hasAnyRole(['admin', 'recepcionista'])) {
+        if (! $user || ! $user->hasAnyRole(['admin', 'recepcionista', 'medico']) || ! $user->can($permission)) {
             abort(403, 'Acceso denegado');
         }
+    }
+
+    private function authorizePermission(string $permission): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (! $user || ! $user->can($permission)) {
+            abort(403, 'Acceso denegado');
+        }
+    }
+
+    private function serviciosActivosParaMedico(?int $medicoId)
+    {
+        if (! $medicoId) {
+            return collect();
+        }
+
+        return Servicio::where('activo', true)
+            ->whereHas('medicos', fn ($query) => $query->where('medicos.id', $medicoId))
+            ->orderBy('nombre')
+            ->get();
     }
 
     private function authorizeMedicoCita(Cita $cita): void
@@ -199,7 +241,7 @@ class CitaController extends Controller
         /** @var User|null $user */
         $user = Auth::user();
 
-        if (! $user || ! $user->hasRole('medico') || $cita->medico?->user_id !== $user->id) {
+        if (! $user || ! $user->hasRole('medico') || ! $user->can('citas.editar') || $cita->medico?->user_id !== $user->id) {
             abort(403, 'No autorizado.');
         }
     }

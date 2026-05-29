@@ -5,10 +5,12 @@
                 <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Agenda clínica</p>
                 <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Disponibilidades</h1>
             </div>
-            <a href="{{ route('disponibilidades.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
-                Nueva disponibilidad
-            </a>
+            @can('disponibilidades.crear')
+                <a href="{{ route('disponibilidades.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
+                    Nueva disponibilidad
+                </a>
+            @endcan
         </div>
     </x-slot>
 
@@ -57,12 +59,16 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
                                     <div class="inline-flex items-center gap-2">
-                                        <a href="{{ route('disponibilidades.edit', $disponibilidad->id) }}" class="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Editar</a>
-                                        <form action="{{ route('disponibilidades.destroy', $disponibilidad->id) }}" method="POST" onsubmit="return confirm('¿Eliminar esta disponibilidad?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100">Eliminar</button>
-                                        </form>
+                                        @can('disponibilidades.editar')
+                                            <a href="{{ route('disponibilidades.edit', $disponibilidad->id) }}" class="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Editar</a>
+                                        @endcan
+                                        @can('disponibilidades.eliminar')
+                                            <form action="{{ route('disponibilidades.destroy', $disponibilidad->id) }}" method="POST" onsubmit="return confirm('¿Eliminar esta disponibilidad?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100">Eliminar</button>
+                                            </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

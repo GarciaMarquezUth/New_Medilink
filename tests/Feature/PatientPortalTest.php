@@ -18,7 +18,7 @@ class PatientPortalTest extends TestCase
     public function test_patient_portal_is_public_and_lists_available_slots(): void
     {
         $medico = $this->createMedico('Doctor Portal');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $response = $this->get(route('portal-citas.index', [
@@ -34,10 +34,58 @@ class PatientPortalTest extends TestCase
             ->assertSee('Termina 09:30');
     }
 
+    public function test_patient_portal_filters_services_by_selected_medico(): void
+    {
+        $medico = $this->createMedico('Doctor Servicios');
+        $otroMedico = $this->createMedico('Doctor Otro');
+        $servicio = $this->createServicio(30, $medico);
+        $otroServicio = $this->createServicio(45, $otroMedico);
+
+        $this->get(route('portal-citas.index', [
+            'medico_id' => $medico->id,
+        ]))
+            ->assertOk()
+            ->assertSee($servicio->nombre)
+            ->assertDontSee($otroServicio->nombre);
+    }
+
+    public function test_patient_portal_shows_message_when_medico_has_no_services(): void
+    {
+        $medico = $this->createMedico('Doctor Sin Servicios');
+
+        $this->get(route('portal-citas.index', [
+            'medico_id' => $medico->id,
+        ]))
+            ->assertOk()
+            ->assertSee('Este médico no tiene servicios disponibles.');
+    }
+
+    public function test_patient_portal_rejects_service_not_assigned_to_medico(): void
+    {
+        $medico = $this->createMedico('Doctor Portal Valido');
+        $otroMedico = $this->createMedico('Doctor Servicio Ajeno');
+        $servicioAjeno = $this->createServicio(30, $otroMedico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->post(route('portal-citas.store'), [
+            'medico_id' => $medico->id,
+            'servicio_id' => $servicioAjeno->id,
+            'fecha' => '2026-06-01',
+            'horario' => '2026-06-01T09:00',
+            'nombre' => 'Paciente',
+            'apellido' => 'Servicio Ajeno',
+            'email' => 'servicio-ajeno@example.com',
+            'telefono' => '555-1212',
+            'motivo' => 'Consulta invalida',
+        ])->assertSessionHasErrors('servicio_id');
+
+        $this->assertDatabaseCount('citas', 0);
+    }
+
     public function test_guest_patient_portal_saves_pending_appointment_and_requires_login(): void
     {
         $medico = $this->createMedico('Doctor Nuevo');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $this->post(route('portal-citas.store'), [
@@ -66,7 +114,7 @@ class PatientPortalTest extends TestCase
             'email' => 'portal@example.com',
         ]);
         $medico = $this->createMedico('Doctor Nuevo');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $this->actingAs($user)->post(route('portal-citas.store'), [
@@ -101,7 +149,7 @@ class PatientPortalTest extends TestCase
             'email' => 'existente@example.com',
         ]);
         $medico = $this->createMedico('Doctor Reuso');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $paciente = $this->createPaciente('Paciente Existente', 'existente@example.com', '555-3333');
         $this->createDisponibilidad($medico, 1);
 
@@ -131,7 +179,7 @@ class PatientPortalTest extends TestCase
             'email' => 'visual@example.com',
         ]);
         $medico = $this->createMedico('Doctor Visual');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $this->actingAs($user)
@@ -156,7 +204,7 @@ class PatientPortalTest extends TestCase
             'email' => 'confirmado@example.com',
         ]);
         $medico = $this->createMedico('Doctor Confirmacion');
-        $servicio = $this->createServicio(30);
+        $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
         $this->post(route('portal-citas.store'), [
@@ -203,7 +251,7 @@ class PatientPortalTest extends TestCase
             'email' => 'revalidado@example.com',
         ]);
         $medico = $this->createMedico('Doctor Revalidacion');
-        $servicio = $this->createServicio(60);
+        $servicio = $this->createServicio(60, $medico);
         $paciente = $this->createPaciente('Paciente Base', 'base-revalidacion@example.com', '555-8888');
         $this->createDisponibilidad($medico, 1);
 
@@ -238,7 +286,7 @@ class PatientPortalTest extends TestCase
     public function test_patient_portal_rejects_overlapping_slot(): void
     {
         $medico = $this->createMedico('Doctor Ocupado');
-        $servicio = $this->createServicio(60);
+        $servicio = $this->createServicio(60, $medico);
         $paciente = $this->createPaciente('Paciente Base', 'base@example.com', '555-4444');
         $this->createDisponibilidad($medico, 1);
 
@@ -289,15 +337,21 @@ class PatientPortalTest extends TestCase
         ]);
     }
 
-    private function createServicio(int $duracion): Servicio
+    private function createServicio(int $duracion, ?Medico $medico = null): Servicio
     {
-        return Servicio::create([
+        $servicio = Servicio::create([
             'nombre' => 'Consulta '.$duracion.' minutos',
             'descripcion' => 'Servicio de prueba',
             'duracion_minutos' => $duracion,
             'precio' => 100,
             'activo' => true,
         ]);
+
+        if ($medico) {
+            $medico->servicios()->attach($servicio->id);
+        }
+
+        return $servicio;
     }
 
     private function createDisponibilidad(Medico $medico, int $diaSemana): Disponibilidad

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Servicio extends Model
@@ -27,5 +28,10 @@ class Servicio extends Model
     public function citas(): HasMany
     {
         return $this->hasMany(Cita::class);
+    }
+
+    public function medicos(): BelongsToMany
+    {
+        return $this->belongsToMany(Medico::class, 'medico_servicio')->withTimestamps();
     }
 }

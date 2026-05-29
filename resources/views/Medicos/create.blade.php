@@ -6,6 +6,10 @@
         </div>
     </x-slot>
 
+    @php
+        $selectedServicios = collect(old('servicio_ids', []))->map(fn ($id) => (int) $id)->all();
+    @endphp
+
     <form action="{{ route('medicos.store') }}" method="POST" class="mx-auto max-w-4xl space-y-6">
         @csrf
 
@@ -58,6 +62,32 @@
                     </select>
                     <p class="mt-2 text-sm font-medium text-slate-500">Solo aparecen usuarios con rol médico.</p>
                     <x-input-error :messages="$errors->get('user_id')" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <x-input-label value="Servicios que atiende" />
+                    <p class="mt-2 text-sm font-medium text-slate-500">Selecciona al menos un servicio para que el médico aparezca con servicios disponibles al agendar.</p>
+
+                    @if($servicios->isEmpty())
+                        <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                            No hay servicios registrados. Crea servicios antes de registrar médicos.
+                        </div>
+                    @else
+                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                            @foreach($servicios as $servicio)
+                                <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm transition hover:border-violet-200 hover:bg-violet-50/60">
+                                    <input type="checkbox" name="servicio_ids[]" value="{{ $servicio->id }}" class="mt-1 rounded border-slate-300 text-violet-600 shadow-sm focus:ring-violet-500" {{ in_array($servicio->id, $selectedServicios, true) ? 'checked' : '' }}>
+                                    <span>
+                                        <span class="block font-bold text-slate-800">{{ $servicio->nombre }}</span>
+                                        <span class="mt-1 block text-xs font-semibold text-slate-500">{{ $servicio->duracion_minutos }} min @if($servicio->precio !== null) · ${{ number_format((float) $servicio->precio, 2) }} @endif @unless($servicio->activo) · Inactivo @endunless</span>
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <x-input-error :messages="$errors->get('servicio_ids')" />
+                    <x-input-error :messages="$errors->get('servicio_ids.*')" />
                 </div>
             </div>
         </div>

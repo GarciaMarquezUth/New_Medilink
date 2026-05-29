@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medico;
+use App\Models\Servicio;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class MedicoController extends Controller
 {
     public function index(): View
     {
-        $medicos = Medico::with('user')->get();
+        $medicos = Medico::with(['user', 'servicios'])->get();
 
         return view('Medicos.index', compact('medicos'));
     }
@@ -21,8 +22,9 @@ class MedicoController extends Controller
     public function create(): View
     {
         $usuariosMedicos = $this->usuariosConRol('medico');
+        $servicios = Servicio::orderBy('nombre')->get();
 
-        return view('Medicos.create', compact('usuariosMedicos'));
+        return view('Medicos.create', compact('usuariosMedicos', 'servicios'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -34,22 +36,29 @@ class MedicoController extends Controller
             'especialidad' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'user_id' => 'nullable|exists:users,id|unique:medicos,user_id',
+            'servicio_ids' => ['required', 'array', 'min:1'],
+            'servicio_ids.*' => ['integer', 'distinct', 'exists:servicios,id'],
         ]);
+
+        $servicioIds = $validated['servicio_ids'];
+        unset($validated['servicio_ids']);
 
         $validated['user_id'] = $validated['user_id'] ?? null;
         $this->ensureUserHasRole($validated['user_id'], 'medico');
 
-        Medico::create($validated);
+        $medico = Medico::create($validated);
+        $medico->servicios()->sync($servicioIds);
 
         return redirect()->route('medicos.index')->with('success', 'Médico registrado exitosamente.');
     }
 
     public function edit(int $id): View
     {
-        $medico = Medico::findOrFail($id);
+        $medico = Medico::with('servicios')->findOrFail($id);
         $usuariosMedicos = $this->usuariosConRol('medico');
+        $servicios = Servicio::orderBy('nombre')->get();
 
-        return view('Medicos.edit', compact('medico', 'usuariosMedicos'));
+        return view('Medicos.edit', compact('medico', 'usuariosMedicos', 'servicios'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -63,12 +72,18 @@ class MedicoController extends Controller
             'especialidad' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'user_id' => 'nullable|exists:users,id|unique:medicos,user_id,'.$id,
+            'servicio_ids' => ['required', 'array', 'min:1'],
+            'servicio_ids.*' => ['integer', 'distinct', 'exists:servicios,id'],
         ]);
+
+        $servicioIds = $validated['servicio_ids'];
+        unset($validated['servicio_ids']);
 
         $validated['user_id'] = $validated['user_id'] ?? null;
         $this->ensureUserHasRole($validated['user_id'], 'medico');
 
         $medico->update($validated);
+        $medico->servicios()->sync($servicioIds);
 
         return redirect()->route('medicos.index')->with('success', 'Datos del médico actualizados.');
     }

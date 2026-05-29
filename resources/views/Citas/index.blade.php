@@ -5,12 +5,12 @@
                 <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Agenda clínica</p>
                 <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Citas</h1>
             </div>
-            @hasanyrole(['admin', 'recepcionista'])
+            @can('citas.crear')
                 <a href="{{ route('citas.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
                     Nueva cita
                 </a>
-            @endhasanyrole
+            @endcan
             @role('paciente')
                 <a href="{{ route('portal-citas.index') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
@@ -92,27 +92,33 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
                                     <div class="inline-flex flex-wrap justify-end gap-2">
                                         @hasanyrole(['admin', 'recepcionista'])
-                                            <a href="{{ route('citas.edit', $cita->id) }}" class="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Editar</a>
+                                            @can('citas.editar')
+                                                <a href="{{ route('citas.edit', $cita->id) }}" class="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Editar</a>
+                                            @endcan
+                                        @endhasanyrole
+                                        @can('citas.eliminar')
                                             <form action="{{ route('citas.destroy', $cita->id) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100" onclick="return confirm('¿Borrar?')">Eliminar</button>
                                             </form>
-                                        @endhasanyrole
+                                        @endcan
 
                                         @role('medico')
-                                            @if(in_array($cita->estado, $estadosOcupantes, true))
-                                                <form action="{{ route('citas.atendida', $cita->id) }}" method="POST">
-                                                    @csrf
-                                                    <button class="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">Atendida</button>
-                                                </form>
-                                                <form action="{{ route('citas.no-presentada', $cita->id) }}" method="POST">
-                                                    @csrf
-                                                    <button class="rounded-xl bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition hover:bg-orange-100">No presentada</button>
-                                                </form>
-                                            @else
-                                                <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">Finalizada</span>
-                                            @endif
+                                            @can('citas.editar')
+                                                @if(in_array($cita->estado, $estadosOcupantes, true))
+                                                    <form action="{{ route('citas.atendida', $cita->id) }}" method="POST">
+                                                        @csrf
+                                                        <button class="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">Atendida</button>
+                                                    </form>
+                                                    <form action="{{ route('citas.no-presentada', $cita->id) }}" method="POST">
+                                                        @csrf
+                                                        <button class="rounded-xl bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition hover:bg-orange-100">No presentada</button>
+                                                    </form>
+                                                @else
+                                                    <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">Finalizada</span>
+                                                @endif
+                                            @endcan
                                         @endrole
 
                                         @role('paciente')
