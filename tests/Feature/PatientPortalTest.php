@@ -8,8 +8,11 @@ use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Servicio;
 use App\Models\User;
+use App\Services\PendingAppointmentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Volt\Volt;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PatientPortalTest extends TestCase
@@ -152,7 +155,7 @@ class PatientPortalTest extends TestCase
         $servicio = $this->createServicio(30, $medico);
         $this->createDisponibilidad($medico, 1);
 
-        $this->post(route('portal-citas.store'), [
+        $response = $this->post(route('portal-citas.store'), [
             'medico_id' => $medico->id,
             'servicio_id' => $servicio->id,
             'fecha' => '2026-06-01',
@@ -162,10 +165,16 @@ class PatientPortalTest extends TestCase
             'email' => 'portal@example.com',
             'telefono' => '555-2222',
             'motivo' => 'Consulta desde portal',
-        ])
+        ]);
+
+        $response
             ->assertRedirect(route('login'))
-            ->assertSessionHas('portal_cita_pendiente')
-            ->assertSessionHas('url.intended', route('portal-citas.confirm'));
+            ->assertSessionHas(PendingAppointmentService::SESSION_KEY)
+            ->assertSessionMissing(PendingAppointmentService::LEGACY_SESSION_KEY)
+            ->assertSessionHas('url.intended', route('dashboard'))
+            ->assertSessionHas('status', PendingAppointmentService::LOGIN_NOTICE);
+
+        $this->assertSame('portal@example.com', session(PendingAppointmentService::SESSION_KEY)['email']);
 
         $this->assertDatabaseCount('pacientes', 0);
         $this->assertDatabaseCount('citas', 0);
@@ -187,7 +196,8 @@ class PatientPortalTest extends TestCase
             'fecha' => '2026-06-01',
             'horario' => '2026-06-01T09:00',
             'motivo' => 'Consulta desde portal',
-        ])->assertRedirect(route('portal-citas.index'));
+        ])->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success', PendingAppointmentService::CONFIRMED_MESSAGE);
 
         $this->assertDatabaseHas('pacientes', [
             'nombre' => 'Paciente',
@@ -223,7 +233,7 @@ class PatientPortalTest extends TestCase
             'fecha' => '2026-06-01',
             'horario' => '2026-06-01T10:00',
             'motivo' => 'Consulta para paciente existente',
-        ])->assertRedirect(route('portal-citas.index'));
+        ])->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseCount('pacientes', 1);
         $this->assertDatabaseHas('pacientes', [
@@ -261,7 +271,7 @@ class PatientPortalTest extends TestCase
             ->assertDontSee('name="telefono"', false);
     }
 
-    public function test_pending_guest_appointment_can_be_confirmed_after_login(): void
+    public function test_pending_guest_appointment_is_confirmed_automatically_after_login(): void
     {
         $user = User::factory()->create([
             'name' => 'Paciente Confirmado',
@@ -283,16 +293,19 @@ class PatientPortalTest extends TestCase
             'motivo' => 'Consulta pendiente',
         ])->assertRedirect(route('login'));
 
-        $this->actingAs($user)
-            ->get(route('portal-citas.confirm'))
-            ->assertOk()
-            ->assertSee('Confirma tu cita médica')
-            ->assertSee('Consulta pendiente');
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'password');
 
-        $this->actingAs($user)
-            ->post(route('portal-citas.confirm.store'))
-            ->assertRedirect(route('portal-citas.index'))
-            ->assertSessionMissing('portal_cita_pendiente');
+        $component->call('login');
+
+        $component
+            ->assertHasNoErrors()
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertFalse(session()->has(PendingAppointmentService::SESSION_KEY));
+        $this->assertSame(PendingAppointmentService::CONFIRMED_MESSAGE, session('success'));
 
         $this->assertDatabaseHas('pacientes', [
             'email' => 'confirmado@example.com',
@@ -304,6 +317,58 @@ class PatientPortalTest extends TestCase
             'servicio_id' => $servicio->id,
             'fecha_hora' => '2026-06-01 09:15:00',
             'motivo' => 'Consulta pendiente',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+    }
+
+    public function test_pending_guest_appointment_is_confirmed_automatically_after_registration(): void
+    {
+        $medico = $this->createMedico('Doctor Registro');
+        $servicio = $this->createServicio(30, $medico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->post(route('portal-citas.store'), [
+            'medico_id' => $medico->id,
+            'servicio_id' => $servicio->id,
+            'fecha' => '2026-06-01',
+            'horario' => '2026-06-01T09:30',
+            'nombre' => 'Paciente',
+            'apellido' => 'Registrado',
+            'email' => 'registrado@example.com',
+            'telefono' => '555-1010',
+            'motivo' => 'Consulta tras registro',
+        ])->assertRedirect(route('login'));
+
+        $component = Volt::test('pages.auth.register');
+
+        $component
+            ->assertSet('name', 'Paciente Registrado')
+            ->assertSet('email', 'registrado@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->call('register')
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::where('email', 'registrado@example.com')->firstOrFail();
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue($user->hasRole('paciente'));
+        $this->assertFalse(session()->has(PendingAppointmentService::SESSION_KEY));
+        $this->assertSame(PendingAppointmentService::CONFIRMED_MESSAGE, session('success'));
+
+        $this->assertDatabaseHas('pacientes', [
+            'nombre' => 'Paciente',
+            'apellido' => 'Registrado',
+            'email' => 'registrado@example.com',
+            'telefono' => '555-1010',
+            'user_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('citas', [
+            'medico_id' => $medico->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-06-01 09:30:00',
+            'motivo' => 'Consulta tras registro',
             'estado' => Cita::ESTADO_AGENDADA,
         ]);
     }
@@ -340,9 +405,19 @@ class PatientPortalTest extends TestCase
             'estado' => Cita::ESTADO_AGENDADA,
         ]);
 
-        $this->actingAs($user)
-            ->post(route('portal-citas.confirm.store'))
-            ->assertSessionHasErrors('horario');
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'password');
+
+        $component->call('login');
+
+        $component
+            ->assertHasNoErrors()
+            ->assertRedirect(route('portal-citas.index', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertFalse(session()->has(PendingAppointmentService::SESSION_KEY));
+        $this->assertSame(PendingAppointmentService::UNAVAILABLE_MESSAGE, session('error'));
 
         $this->assertDatabaseCount('citas', 1);
     }
@@ -374,6 +449,201 @@ class PatientPortalTest extends TestCase
             'telefono' => '555-5555',
             'motivo' => 'Consulta traslapada',
         ])->assertSessionHasErrors('horario');
+
+        $this->assertDatabaseCount('citas', 1);
+    }
+
+    public function test_patient_internal_create_requires_authentication_and_patient_role(): void
+    {
+        $this->get(route('pacientes.citas.create'))
+            ->assertRedirect(route('login'));
+
+        $admin = $this->userWithRole('admin');
+
+        $this->actingAs($admin)
+            ->get(route('pacientes.citas.create'))
+            ->assertForbidden();
+    }
+
+    public function test_patient_internal_create_uses_dashboard_layout_and_hides_patient_fields(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $user = $this->userWithRole('paciente', [
+            'name' => 'Paciente Interno',
+            'email' => 'interno@example.com',
+        ]);
+        $medico = $this->createMedico('Doctor Interno');
+        $servicio = $this->createServicio(30, $medico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($user)
+            ->get(route('pacientes.citas.create', [
+                'medico_id' => $medico->id,
+                'servicio_id' => $servicio->id,
+                'fecha' => '2026-06-01',
+            ]))
+            ->assertOk()
+            ->assertSee('Agendar nueva cita')
+            ->assertSee('Paciente autenticado')
+            ->assertSee('No necesitas escribir tus datos personales')
+            ->assertSee('09:00')
+            ->assertDontSee('name="nombre"', false)
+            ->assertDontSee('name="apellido"', false)
+            ->assertDontSee('name="email"', false)
+            ->assertDontSee('name="telefono"', false);
+    }
+
+    public function test_patient_internal_endpoints_return_services_dates_and_slots(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $user = $this->userWithRole('paciente');
+        $medico = $this->createMedico('Doctor Json Interno');
+        $otroMedico = $this->createMedico('Doctor Json Externo');
+        $servicio = $this->createServicio(30, $medico);
+        $otroServicio = $this->createServicio(45, $otroMedico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($user)
+            ->getJson(route('pacientes.citas.servicios', $medico))
+            ->assertOk()
+            ->assertJsonPath('servicios.0.id', $servicio->id)
+            ->assertJsonMissing(['id' => $otroServicio->id]);
+
+        $this->actingAs($user)
+            ->getJson(route('pacientes.citas.fechas', [$medico, $servicio]))
+            ->assertOk()
+            ->assertJsonPath('fechas.0.value', '2026-06-01')
+            ->assertJsonPath('fechas.0.label', 'Lunes 1 junio');
+
+        $this->actingAs($user)
+            ->getJson(route('pacientes.citas.horarios', [$medico, $servicio, '2026-06-01']))
+            ->assertOk()
+            ->assertJsonPath('horarios.0.value', '2026-06-01T08:00')
+            ->assertJsonPath('horarios.0.ends_at', '08:30');
+    }
+
+    public function test_patient_dashboard_links_to_internal_appointment_create(): void
+    {
+        $user = $this->userWithRole('paciente', [
+            'name' => 'Paciente Link',
+            'email' => 'paciente-link@example.com',
+        ]);
+        $paciente = $this->createPaciente('Paciente Link', 'paciente-link@example.com', '555-3030');
+        $paciente->update(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(route('pacientes.citas.create'), false)
+            ->assertDontSee(route('portal-citas.index'), false);
+    }
+
+    public function test_patient_internal_store_creates_appointment_for_authenticated_patient(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $user = $this->userWithRole('paciente', [
+            'name' => 'Paciente Dashboard',
+            'email' => 'dashboard@example.com',
+        ]);
+        $paciente = $this->createPaciente('Paciente Dashboard', 'dashboard@example.com', '555-1234');
+        $paciente->update(['user_id' => $user->id]);
+        $medico = $this->createMedico('Doctor Dashboard');
+        $servicio = $this->createServicio(30, $medico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($user)
+            ->post(route('pacientes.citas.store'), [
+                'medico_id' => $medico->id,
+                'servicio_id' => $servicio->id,
+                'fecha' => '2026-06-01',
+                'horario' => '2026-06-01T09:00',
+                'motivo' => 'Consulta interna',
+            ])
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+
+        $this->assertDatabaseHas('citas', [
+            'medico_id' => $medico->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-06-01 09:00:00',
+            'motivo' => 'Consulta interna',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+    }
+
+    public function test_patient_internal_store_ignores_submitted_patient_identity_fields(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $user = $this->userWithRole('paciente', [
+            'name' => 'Paciente Seguro',
+            'email' => 'seguro@example.com',
+        ]);
+        $medico = $this->createMedico('Doctor Seguro');
+        $servicio = $this->createServicio(30, $medico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($user)
+            ->post(route('pacientes.citas.store'), [
+                'medico_id' => $medico->id,
+                'servicio_id' => $servicio->id,
+                'fecha' => '2026-06-01',
+                'horario' => '2026-06-01T09:15',
+                'nombre' => 'Nombre Inyectado',
+                'apellido' => 'Apellido Inyectado',
+                'email' => 'otro@example.com',
+                'telefono' => '999-9999',
+                'motivo' => 'Consulta segura',
+            ])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseHas('pacientes', [
+            'nombre' => 'Paciente',
+            'apellido' => 'Seguro',
+            'email' => 'seguro@example.com',
+            'telefono' => '',
+            'user_id' => $user->id,
+        ]);
+
+        $this->assertDatabaseMissing('pacientes', [
+            'email' => 'otro@example.com',
+        ]);
+    }
+
+    public function test_patient_internal_store_rejects_unavailable_slot(): void
+    {
+        Carbon::setTestNow('2026-05-29 07:00:00');
+
+        $user = $this->userWithRole('paciente');
+        $paciente = $this->createPaciente('Paciente Interno', $user->email, '555-4321');
+        $paciente->update(['user_id' => $user->id]);
+        $medico = $this->createMedico('Doctor Sin Horario');
+        $servicio = $this->createServicio(60, $medico);
+        $ocupante = $this->createPaciente('Paciente Ocupante', 'ocupante-interno@example.com', '555-0001');
+        $this->createDisponibilidad($medico, 1);
+
+        Cita::create([
+            'medico_id' => $medico->id,
+            'paciente_id' => $ocupante->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-06-01 09:00:00',
+            'motivo' => 'Consulta ocupante',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('pacientes.citas.store'), [
+                'medico_id' => $medico->id,
+                'servicio_id' => $servicio->id,
+                'fecha' => '2026-06-01',
+                'horario' => '2026-06-01T09:30',
+                'motivo' => 'Consulta no disponible',
+            ])
+            ->assertSessionHasErrors('horario');
 
         $this->assertDatabaseCount('citas', 1);
     }
@@ -427,5 +697,15 @@ class PatientPortalTest extends TestCase
             'hora_fin' => '12:00',
             'activo' => true,
         ]);
+    }
+
+    private function userWithRole(string $role, array $attributes = []): User
+    {
+        Role::findOrCreate($role, 'web');
+
+        $user = User::factory()->create($attributes);
+        $user->assignRole($role);
+
+        return $user;
     }
 }

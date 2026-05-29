@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\User;
+use App\Services\PendingAppointmentService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -15,6 +18,25 @@ new #[Layout('layouts.guest')] class extends Component
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+
+    public function mount(): void
+    {
+        $pendingAppointment = session(PendingAppointmentService::SESSION_KEY) ?: session(PendingAppointmentService::LEGACY_SESSION_KEY);
+
+        if (! $pendingAppointment) {
+            return;
+        }
+
+        $pendingName = trim(($pendingAppointment['nombre'] ?? '').' '.($pendingAppointment['apellido'] ?? ''));
+
+        if ($pendingName !== '' && $this->name === '') {
+            $this->name = $pendingName;
+        }
+
+        if (! empty($pendingAppointment['email']) && $this->email === '') {
+            $this->email = $pendingAppointment['email'];
+        }
+    }
 
     /**
      * Handle an incoming registration request.
@@ -36,6 +58,33 @@ new #[Layout('layouts.guest')] class extends Component
 
         Auth::login($user);
 
+        Session::regenerate();
+
+        $pendingAppointments = app(PendingAppointmentService::class);
+
+        if ($pendingAppointments->hasPending()) {
+            $payload = $pendingAppointments->pending();
+
+            try {
+                $pendingAppointments->confirmPendingFor($user);
+                session()->forget('url.intended');
+                session()->flash('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+
+                $this->redirect(route('dashboard', absolute: false), navigate: true);
+
+                return;
+            } catch (ValidationException) {
+                $pendingAppointments->forgetPending();
+                session()->forget('url.intended');
+                session()->flash('error', PendingAppointmentService::UNAVAILABLE_MESSAGE);
+                session()->flash('_old_input', $payload ?? []);
+
+                $this->redirect(route('portal-citas.index', absolute: false), navigate: true);
+
+                return;
+            }
+        }
+
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
@@ -49,9 +98,9 @@ new #[Layout('layouts.guest')] class extends Component
 
     <x-auth-session-status class="mb-5" :status="session('status')" />
 
-    @if (session('portal_cita_pendiente'))
+    @if (session(PendingAppointmentService::SESSION_KEY) || session(PendingAppointmentService::LEGACY_SESSION_KEY))
         <div class="mb-5 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-800">
-            Inicia sesión o regístrate para confirmar tu cita.
+            {{ PendingAppointmentService::LOGIN_NOTICE }}
         </div>
     @endif
 

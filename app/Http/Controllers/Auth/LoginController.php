@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\PendingAppointmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
@@ -13,15 +15,33 @@ class LoginController extends Controller
         return view('Inicio-de-sesion.login');
     }
 
-    public function login(Request $request)
+    public function login(Request $request, PendingAppointmentService $pendingAppointments)
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->remember)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
+            if ($pendingAppointments->hasPending()) {
+                $payload = $pendingAppointments->pending();
+
+                try {
+                    $pendingAppointments->confirmPendingFor($request->user());
+                    $request->session()->forget('url.intended');
+
+                    return redirect()->route('dashboard')->with('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+                } catch (ValidationException) {
+                    $pendingAppointments->forgetPending();
+                    $request->session()->forget('url.intended');
+
+                    return redirect()->route('portal-citas.index')
+                        ->with('error', PendingAppointmentService::UNAVAILABLE_MESSAGE)
+                        ->withInput($payload ?? []);
+                }
+            }
 
             return redirect()->intended('/dashboard');
         }

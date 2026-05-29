@@ -1,13 +1,24 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use App\Services\PendingAppointmentService;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
 new #[Layout('layouts.guest')] class extends Component
 {
     public LoginForm $form;
+
+    public function mount(): void
+    {
+        $pendingAppointment = session(PendingAppointmentService::SESSION_KEY) ?: session(PendingAppointmentService::LEGACY_SESSION_KEY);
+
+        if ($pendingAppointment && empty($this->form->email)) {
+            $this->form->email = $pendingAppointment['email'] ?? '';
+        }
+    }
 
     /**
      * Handle an incoming authentication request.
@@ -19,6 +30,31 @@ new #[Layout('layouts.guest')] class extends Component
         $this->form->authenticate();
 
         Session::regenerate();
+
+        $pendingAppointments = app(PendingAppointmentService::class);
+
+        if ($pendingAppointments->hasPending()) {
+            $payload = $pendingAppointments->pending();
+
+            try {
+                $pendingAppointments->confirmPendingFor(auth()->user());
+                session()->forget('url.intended');
+                session()->flash('success', PendingAppointmentService::CONFIRMED_MESSAGE);
+
+                $this->redirect(route('dashboard', absolute: false), navigate: true);
+
+                return;
+            } catch (ValidationException) {
+                $pendingAppointments->forgetPending();
+                session()->forget('url.intended');
+                session()->flash('error', PendingAppointmentService::UNAVAILABLE_MESSAGE);
+                session()->flash('_old_input', $payload ?? []);
+
+                $this->redirect(route('portal-citas.index', absolute: false), navigate: true);
+
+                return;
+            }
+        }
 
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
@@ -33,9 +69,9 @@ new #[Layout('layouts.guest')] class extends Component
 
     <x-auth-session-status class="mb-5" :status="session('status')" />
 
-    @if (session('portal_cita_pendiente'))
+    @if (session('pending_appointment') || session('portal_cita_pendiente'))
         <div class="mb-5 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-800">
-            Inicia sesión o regístrate para confirmar tu cita.
+            {{ PendingAppointmentService::LOGIN_NOTICE }}
         </div>
     @endif
 

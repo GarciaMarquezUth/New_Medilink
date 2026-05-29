@@ -90,7 +90,7 @@
                     <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Portal del paciente</p>
                     <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Mis citas</h1>
                 </div>
-                <a href="{{ route('portal-citas.index') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
+                <a href="{{ route('pacientes.citas.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
                     Agendar cita
                 </a>
@@ -171,7 +171,7 @@
                             <h3 class="text-lg font-extrabold text-slate-950">Próximas citas</h3>
                             <p class="mt-1 text-sm font-medium text-slate-500">Solo se muestran citas vinculadas a tu usuario.</p>
                         </div>
-                        <a href="{{ route('portal-citas.index') }}" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Agendar cita</a>
+                        <a href="{{ route('pacientes.citas.create') }}" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Agendar cita</a>
                     </div>
 
                     <div class="divide-y divide-slate-100">
@@ -206,7 +206,7 @@
                         @empty
                             <div class="px-6 py-12 text-center">
                                 <p class="text-sm font-semibold text-slate-500">No tienes próximas citas.</p>
-                                <a href="{{ route('portal-citas.index') }}" class="mt-4 inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Agendar una cita</a>
+                                <a href="{{ route('pacientes.citas.create') }}" class="mt-4 inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Agendar una cita</a>
                             </div>
                         @endforelse
                     </div>

@@ -16,16 +16,17 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
-class PortalCitaController extends Controller
+class PacienteCitaController extends Controller
 {
     public function __construct(
         private AppointmentAvailabilityService $availability,
-        private PendingAppointmentService $pendingAppointments,
+        private PendingAppointmentService $appointments,
     ) {}
 
     public function create(Request $request): View
     {
         $medicos = Medico::with(['servicios' => fn ($query) => $query->where('activo', true)->orderBy('nombre')])
+            ->whereHas('servicios', fn ($query) => $query->where('activo', true)->where('duracion_minutos', '>=', 5))
             ->orderBy('nombre')
             ->orderBy('apellido')
             ->get();
@@ -33,6 +34,7 @@ class PortalCitaController extends Controller
         $selectedMedicoId = $request->old('medico_id', $request->query('medico_id'));
         $selectedServicioId = $request->old('servicio_id', $request->query('servicio_id'));
         $selectedFecha = $request->old('fecha', $request->query('fecha'));
+        $selectedHorario = $request->old('horario');
         $servicios = collect();
         $serviciosIniciales = collect();
         $fechasDisponibles = [];
@@ -44,11 +46,13 @@ class PortalCitaController extends Controller
             $selectedMedicoId = null;
             $selectedServicioId = null;
             $selectedFecha = null;
+            $selectedHorario = null;
         }
 
         if ($selectedServicioId && ! $servicios->contains('id', (int) $selectedServicioId)) {
             $selectedServicioId = null;
             $selectedFecha = null;
+            $selectedHorario = null;
         }
 
         $serviciosIniciales = $servicios
@@ -73,15 +77,26 @@ class PortalCitaController extends Controller
             }
         }
 
-        $serviciosDestacados = $selectedMedicoId
-            ? $servicios->take(4)
-            : Servicio::where('activo', true)
-                ->where('duracion_minutos', '>=', 5)
-                ->orderBy('nombre')
-                ->limit(4)
-                ->get();
+        return view('Pacientes.citas.create', compact('medicos', 'servicios', 'serviciosIniciales', 'fechasDisponibles', 'selectedMedicoId', 'selectedServicioId', 'selectedFecha', 'selectedHorario', 'horarios'));
+    }
 
-        return view('PortalCitas.create', compact('medicos', 'servicios', 'serviciosIniciales', 'serviciosDestacados', 'fechasDisponibles', 'selectedMedicoId', 'selectedServicioId', 'selectedFecha', 'horarios'));
+    public function store(Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $validated = $this->appointments->validateAppointmentPayload($request->all(), requirePatientFields: false);
+        $payload = $this->appointments->withAuthenticatedPatientData([
+            'medico_id' => $validated['medico_id'],
+            'servicio_id' => $validated['servicio_id'],
+            'fecha' => $validated['fecha'],
+            'horario' => $validated['horario'],
+            'motivo' => $validated['motivo'],
+        ], $user);
+
+        $this->appointments->createAppointment($payload, $user);
+
+        return redirect()->route('dashboard')->with('success', PendingAppointmentService::CONFIRMED_MESSAGE);
     }
 
     public function serviciosPorMedico(Medico $medico): JsonResponse
@@ -126,85 +141,6 @@ class PortalCitaController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
-    {
-        /** @var User|null $user */
-        $user = Auth::user();
-
-        $validated = $this->pendingAppointments->validateAppointmentPayload($request->all(), requirePatientFields: ! $user);
-        $inicio = $this->pendingAppointments->validateSelectedDateTime($validated['fecha'], $validated['horario']);
-        $validated['horario'] = $inicio->format('Y-m-d\TH:i');
-
-        $this->pendingAppointments->ensureSlotWasOffered((int) $validated['medico_id'], (int) $validated['servicio_id'], $validated['fecha'], $inicio);
-
-        if (! $user) {
-            $this->pendingAppointments->storePending($validated);
-            session()->put('url.intended', route('dashboard'));
-
-            return redirect()->route('login')->with('status', PendingAppointmentService::LOGIN_NOTICE);
-        }
-
-        $validated = $this->pendingAppointments->withAuthenticatedPatientData($validated, $user);
-
-        $this->pendingAppointments->createAppointment($validated, $user);
-        $this->pendingAppointments->forgetPending();
-
-        return redirect()->route('dashboard')->with('success', PendingAppointmentService::CONFIRMED_MESSAGE);
-    }
-
-    public function confirm(): View|RedirectResponse
-    {
-        $payload = $this->pendingAppointments->pending();
-
-        if (! $payload) {
-            return redirect()->route('portal-citas.index')->with('status', 'Selecciona un horario para continuar con tu cita.');
-        }
-
-        /** @var User $user */
-        $user = Auth::user();
-
-        try {
-            $payload = $this->pendingAppointments->withAuthenticatedPatientData(
-                $this->pendingAppointments->validateAppointmentPayload($payload, requirePatientFields: false),
-                $user,
-            );
-        } catch (ValidationException $exception) {
-            return redirect()->route('portal-citas.index')
-                ->withErrors($exception->errors())
-                ->withInput($payload);
-        }
-
-        $medico = Medico::find($payload['medico_id']);
-        $servicio = Servicio::find($payload['servicio_id']);
-
-        return view('PortalCitas.confirm', compact('payload', 'medico', 'servicio'));
-    }
-
-    public function confirmStore(): RedirectResponse
-    {
-        $payload = $this->pendingAppointments->pending();
-
-        if (! $payload) {
-            return redirect()->route('portal-citas.index')->with('status', 'Selecciona un horario para continuar con tu cita.');
-        }
-
-        /** @var User $user */
-        $user = Auth::user();
-
-        try {
-            $this->pendingAppointments->confirmPendingFor($user);
-        } catch (ValidationException) {
-            $this->pendingAppointments->forgetPending();
-
-            return redirect()->route('portal-citas.index')
-                ->with('error', PendingAppointmentService::UNAVAILABLE_MESSAGE)
-                ->withErrors(['horario' => PendingAppointmentService::UNAVAILABLE_MESSAGE])
-                ->withInput($payload);
-        }
-
-        return redirect()->route('dashboard')->with('success', PendingAppointmentService::CONFIRMED_MESSAGE);
-    }
-
     private function serviciosDisponiblesParaMedico(int $medicoId)
     {
         return Servicio::where('activo', true)
@@ -222,6 +158,9 @@ class PortalCitaController extends Controller
             return [
                 'value' => $availableDate['date'],
                 'label' => $this->formatDateLabel($date),
+                'short_day' => $this->formatShortWeekday($date),
+                'day_number' => $date->format('d'),
+                'month' => $this->monthName($date),
                 'slots_count' => $availableDate['slots_count'],
             ];
         }, $this->availability->availableDates($medicoId, $servicioId, $daysAhead, $limit));
@@ -258,7 +197,25 @@ class PortalCitaController extends Controller
 
     private function formatDateLabel(Carbon $date): string
     {
-        $weekdays = [
+        return $this->weekdayName($date).' '.$date->day.' '.$this->monthName($date);
+    }
+
+    private function formatShortWeekday(Carbon $date): string
+    {
+        return [
+            1 => 'Lun',
+            2 => 'Mar',
+            3 => 'Mié',
+            4 => 'Jue',
+            5 => 'Vie',
+            6 => 'Sáb',
+            7 => 'Dom',
+        ][$date->dayOfWeekIso];
+    }
+
+    private function weekdayName(Carbon $date): string
+    {
+        return [
             1 => 'Lunes',
             2 => 'Martes',
             3 => 'Miércoles',
@@ -266,9 +223,12 @@ class PortalCitaController extends Controller
             5 => 'Viernes',
             6 => 'Sábado',
             7 => 'Domingo',
-        ];
+        ][$date->dayOfWeekIso];
+    }
 
-        $months = [
+    private function monthName(Carbon $date): string
+    {
+        return [
             1 => 'enero',
             2 => 'febrero',
             3 => 'marzo',
@@ -281,8 +241,6 @@ class PortalCitaController extends Controller
             10 => 'octubre',
             11 => 'noviembre',
             12 => 'diciembre',
-        ];
-
-        return $weekdays[$date->dayOfWeekIso].' '.$date->day.' '.$months[$date->month];
+        ][$date->month];
     }
 }

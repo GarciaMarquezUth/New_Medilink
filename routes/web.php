@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\MedicoController;
+use App\Http\Controllers\PacienteCitaController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\PortalCitaController;
@@ -100,6 +101,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('citas/{cita}/cancelar', [CitaController::class, 'cancelarPaciente'])
             ->name('citas.cancelar-paciente')
             ->middleware('role:paciente');
+
+        Route::middleware('role:paciente')->group(function () {
+            Route::get('mis-citas/crear', [PacienteCitaController::class, 'create'])->name('pacientes.citas.create');
+            Route::post('mis-citas', [PacienteCitaController::class, 'store'])->name('pacientes.citas.store');
+            Route::get('mis-citas/medicos/{medico}/servicios', [PacienteCitaController::class, 'serviciosPorMedico'])->name('pacientes.citas.servicios');
+            Route::get('mis-citas/medicos/{medico}/servicios/{servicio}/fechas', [PacienteCitaController::class, 'fechasDisponibles'])->name('pacientes.citas.fechas');
+            Route::get('mis-citas/medicos/{medico}/servicios/{servicio}/fechas/{fecha}/horarios', [PacienteCitaController::class, 'horariosDisponibles'])
+                ->where('fecha', '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                ->name('pacientes.citas.horarios');
+        });
 
         // --- RUTAS PERSONALIZADAS PARA EL MÉDICO ---
         // Estas van dentro del grupo dashboard para mantener el prefijo

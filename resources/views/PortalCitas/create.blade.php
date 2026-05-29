@@ -131,6 +131,12 @@
                             </div>
                         @endif
 
+                        @if (session('error'))
+                            <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800 shadow-sm">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
                         @if ($errors->any())
                             <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-sm">
                                 <p class="font-black">Revisa la información ingresada.</p>
