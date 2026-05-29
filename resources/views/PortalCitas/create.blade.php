@@ -36,7 +36,7 @@
             ];
         @endphp
 
-        <main id="inicio" class="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#f3e8ff_0,#f8fafc_34%,#f1f5f9_100%)]">
+        <main id="inicio" class="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,#f3e8ff_0,#f8fafc_34%,#f1f5f9_100%)]">
             <header class="sticky top-0 z-40 border-b border-white/70 bg-white/85 backdrop-blur-xl">
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8">
                     <a href="{{ url('/') }}" class="inline-flex items-center gap-3" aria-label="MediLink">
@@ -66,8 +66,8 @@
                 <div class="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-300/20 blur-3xl"></div>
                 <div class="absolute right-0 top-40 h-80 w-80 rounded-full bg-fuchsia-200/30 blur-3xl"></div>
 
-                <div class="relative mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_520px] lg:px-8 lg:py-16 xl:gap-14">
-                    <div class="flex flex-col justify-center">
+                <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-start lg:gap-10 lg:px-8 lg:py-12 xl:gap-12">
+                    <div class="flex flex-col justify-start lg:sticky lg:top-24 lg:self-start lg:pr-6">
                         <span class="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-violet-700 shadow-sm">
                             <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                             Portal del paciente
@@ -100,9 +100,14 @@
                                 Ver especialistas
                             </a>
                         </div>
+
+                        <div class="mt-6 max-w-2xl rounded-3xl border border-violet-100 bg-white/75 p-5 shadow-sm shadow-slate-200/70 backdrop-blur">
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Ayuda rápida</p>
+                            <p class="mt-2 text-sm font-semibold leading-6 text-slate-600">Selecciona médico, servicio y una fecha disponible. El formulario de la derecha se actualizará sin mover esta sección.</p>
+                        </div>
                     </div>
 
-                    <aside id="agenda" class="rounded-[2rem] border border-white bg-white/90 p-4 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-5">
+                    <aside id="agenda" class="rounded-[2rem] border border-white bg-white/90 p-4 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-5 lg:self-start">
                         <div class="rounded-[1.65rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-950/15">
                             <div class="flex items-start justify-between gap-4">
                                 <div>

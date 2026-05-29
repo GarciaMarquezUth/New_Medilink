@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cita;
+use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -86,6 +89,31 @@ class PacienteController extends Controller
         Paciente::findOrFail($id)->delete();
 
         return redirect()->route('pacientes.index')->with('success', 'Paciente eliminado.');
+    }
+
+    public function showForMedico(Paciente $paciente): View
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        $medico = Medico::where('user_id', $user?->id)->first();
+
+        if (! $medico) {
+            abort(403, 'Tu usuario médico no está vinculado a un registro de médico.');
+        }
+
+        $citas = Cita::with('servicio')
+            ->where('medico_id', $medico->id)
+            ->where('paciente_id', $paciente->id)
+            ->orderByDesc('fecha_hora')
+            ->get();
+
+        if ($citas->isEmpty()) {
+            abort(403, 'No autorizado.');
+        }
+
+        $estadoLabels = Cita::estados();
+
+        return view('Pacientes.medico-show', compact('paciente', 'medico', 'citas', 'estadoLabels'));
     }
 
     private function usuariosConRol(string $role)

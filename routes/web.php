@@ -56,11 +56,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('role:medico')->group(function () {
             Route::get('mi-perfil-medico', [MedicoController::class, 'profile'])->name('medicos.profile');
             Route::put('mi-perfil-medico', [MedicoController::class, 'updateProfile'])->name('medicos.profile.update');
+            Route::get('mis-pacientes/{paciente}', [PacienteController::class, 'showForMedico'])->name('medicos.pacientes.show');
         });
 
         Route::resource('pacientes', PacienteController::class)
             ->except(['show'])
-            ->middleware('role:admin|recepcionista|medico')
+            ->middleware('role:admin|recepcionista')
             ->middlewareFor('index', 'permission:pacientes.ver')
             ->middlewareFor(['create', 'store'], 'permission:pacientes.crear')
             ->middlewareFor(['edit', 'update'], 'permission:pacientes.editar')

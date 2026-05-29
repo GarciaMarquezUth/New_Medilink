@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -68,7 +69,7 @@ class RoleAccessTest extends TestCase
         $medicoUser = $this->userWithRole('medico');
         $otroMedicoUser = $this->userWithRole('medico');
 
-        $this->createCitaForMedico('Paciente Propio', 'Doctor Propio', $medicoUser);
+        $citaPropia = $this->createCitaForMedico('Paciente Propio', 'Doctor Propio', $medicoUser);
         $this->createCitaForMedico('Paciente Ajeno', 'Doctor Ajeno', $otroMedicoUser);
 
         $response = $this->actingAs($medicoUser)->get(route('dashboard'));
@@ -82,6 +83,8 @@ class RoleAccessTest extends TestCase
             ->assertSee('Citas atendidas')
             ->assertSee('Mis pacientes')
             ->assertSee('Paciente Propio')
+            ->assertSee('Ver detalles')
+            ->assertSee(route('medicos.pacientes.show', $citaPropia->paciente_id), false)
             ->assertDontSee('Paciente Ajeno')
             ->assertDontSee('Estado del sistema')
             ->assertDontSee('Nuevo médico')
@@ -89,6 +92,87 @@ class RoleAccessTest extends TestCase
             ->assertDontSee('Nuevo servicio')
             ->assertDontSee('Médicos</p>', false)
             ->assertDontSee('Pacientes</p>', false);
+    }
+
+    public function test_medico_can_view_own_patient_detail_with_only_own_citas(): void
+    {
+        Carbon::setTestNow('2026-05-29 08:00:00');
+
+        $medicoUser = $this->userWithRole('medico');
+        $otroMedicoUser = $this->userWithRole('medico');
+        $medico = $this->createMedico('Doctor Detalle', $medicoUser);
+        $otroMedico = $this->createMedico('Doctor Ajeno', $otroMedicoUser);
+        $paciente = $this->createPaciente('Paciente Detalle');
+        $pacienteAjeno = $this->createPaciente('Paciente Ajeno');
+        $servicio = $this->createServicio(30, $medico);
+        $servicioAjeno = $this->createServicio(30, $otroMedico);
+
+        Cita::create([
+            'medico_id' => $medico->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-05-28 09:00:00',
+            'motivo' => 'Consulta de seguimiento propia',
+            'estado' => Cita::ESTADO_ATENDIDA,
+        ]);
+
+        Cita::create([
+            'medico_id' => $medico->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-06-01 10:00:00',
+            'motivo' => 'Consulta futura propia',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+
+        Cita::create([
+            'medico_id' => $otroMedico->id,
+            'paciente_id' => $pacienteAjeno->id,
+            'servicio_id' => $servicioAjeno->id,
+            'fecha_hora' => '2026-06-02 10:00:00',
+            'motivo' => 'Consulta ajena privada',
+            'estado' => Cita::ESTADO_AGENDADA,
+        ]);
+
+        $this->actingAs($medicoUser)
+            ->get(route('medicos.pacientes.show', $paciente))
+            ->assertOk()
+            ->assertSee('Paciente Detalle')
+            ->assertSee('Consulta de seguimiento propia')
+            ->assertSee('Consulta futura propia')
+            ->assertSee('Consulta 30 minutos')
+            ->assertSee('Atendida')
+            ->assertSee('Agendada')
+            ->assertDontSee('Consulta ajena privada')
+            ->assertDontSee('Editar')
+            ->assertDontSee('Eliminar');
+
+        $this->actingAs($medicoUser)
+            ->get(route('medicos.pacientes.show', $pacienteAjeno))
+            ->assertForbidden();
+    }
+
+    public function test_medico_cannot_access_global_patient_management_even_with_permissions(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $paciente = $this->createPaciente('Paciente Bloqueado');
+
+        foreach (['pacientes.ver', 'pacientes.editar', 'pacientes.eliminar'] as $permission) {
+            Permission::findOrCreate($permission, 'web');
+            $medicoUser->givePermissionTo($permission);
+        }
+
+        $this->actingAs($medicoUser)
+            ->get(route('pacientes.index'))
+            ->assertForbidden();
+
+        $this->actingAs($medicoUser)
+            ->get(route('pacientes.edit', $paciente->id))
+            ->assertForbidden();
+
+        $this->actingAs($medicoUser)
+            ->delete(route('pacientes.destroy', $paciente->id))
+            ->assertForbidden();
     }
 
     public function test_medico_can_update_own_profile_photo_and_data(): void

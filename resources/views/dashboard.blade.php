@@ -61,17 +61,20 @@
 
         $pacientesMedicoData = $pacientesMedico->map(function ($paciente) use ($citasMedico, $estadosOcupantes) {
             $citasDelPaciente = $citasMedico->where('paciente_id', $paciente->id);
+            $ultima = $citasDelPaciente
+                ->filter(fn ($cita) => $cita->fecha_hora->isPast() || ! in_array($cita->estado, $estadosOcupantes, true))
+                ->sortByDesc('fecha_hora')
+                ->first();
+            $proxima = $citasDelPaciente
+                ->filter(fn ($cita) => $cita->fecha_hora->isFuture() && in_array($cita->estado, $estadosOcupantes, true))
+                ->sortBy('fecha_hora')
+                ->first();
 
             return [
                 'paciente' => $paciente,
-                'ultima' => $citasDelPaciente
-                    ->filter(fn ($cita) => $cita->fecha_hora->isPast() || ! in_array($cita->estado, $estadosOcupantes, true))
-                    ->sortByDesc('fecha_hora')
-                    ->first(),
-                'proxima' => $citasDelPaciente
-                    ->filter(fn ($cita) => $cita->fecha_hora->isFuture() && in_array($cita->estado, $estadosOcupantes, true))
-                    ->sortBy('fecha_hora')
-                    ->first(),
+                'ultima' => $ultima,
+                'proxima' => $proxima,
+                'estado_cita' => $proxima ?: $ultima ?: $citasDelPaciente->sortByDesc('fecha_hora')->first(),
             ];
         })->values();
     } else {
@@ -383,6 +386,8 @@
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Email</th>
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Última cita</th>
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Próxima cita</th>
+                                <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Estado</th>
+                                <th class="px-6 py-4 text-right text-xs font-extrabold uppercase tracking-wider text-slate-500">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -408,10 +413,24 @@
                                             <span class="text-slate-400">Sin próxima cita</span>
                                         @endif
                                     </td>
+                                    <td class="whitespace-nowrap px-6 py-4">
+                                        @if($item['estado_cita'])
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold ring-1 {{ $estadoClasses($item['estado_cita']->estado) }}">
+                                                {{ $estadoLabels[$item['estado_cita']->estado] ?? str_replace('_', ' ', $item['estado_cita']->estado) }}
+                                            </span>
+                                        @else
+                                            <span class="text-sm font-semibold text-slate-400">Sin estado</span>
+                                        @endif
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-4 text-right">
+                                        <a href="{{ route('medicos.pacientes.show', $paciente->id) }}" class="inline-flex items-center justify-center rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">
+                                            Ver detalles
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center">
+                                    <td colspan="7" class="px-6 py-12 text-center">
                                         <p class="text-sm font-semibold text-slate-500">Aún no tienes pacientes vinculados a tus citas.</p>
                                     </td>
                                 </tr>
