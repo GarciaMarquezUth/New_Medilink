@@ -17,11 +17,27 @@ use Illuminate\View\View;
 
 class PacienteController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $pacientes = Paciente::with('user')->get();
+        $filters = $request->only('q');
+        $pacientes = Paciente::with('user')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $search = trim((string) $request->query('q'));
 
-        return view('Pacientes.index', compact('pacientes'));
+                $query->where(function ($query) use ($search) {
+                    $query->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('apellido', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('telefono', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($query) => $query->where('email', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('Pacientes.index', compact('pacientes', 'filters'));
     }
 
     public function create(): View
@@ -134,7 +150,7 @@ class PacienteController extends Controller
             }
         }
 
-        return redirect()->route('dashboard')->with('success', 'Perfil médico actualizado correctamente.');
+        return redirect()->route('dashboard')->with('success', 'Perfil del paciente actualizado correctamente.');
     }
 
     public function showForMedico(Paciente $paciente): View

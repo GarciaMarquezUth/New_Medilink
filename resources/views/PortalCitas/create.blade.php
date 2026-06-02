@@ -155,7 +155,7 @@
                                     <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Disponibilidad</p>
                                     <h3 class="mt-1 text-xl font-black tracking-tight text-slate-950">Busca un horario disponible</h3>
                                 </div>
-                                <span class="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700">Cada 15 min</span>
+                                <span class="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700">Duración real</span>
                             </div>
 
                             <form

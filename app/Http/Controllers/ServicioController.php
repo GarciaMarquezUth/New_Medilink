@@ -9,11 +9,26 @@ use Illuminate\View\View;
 
 class ServicioController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $servicios = Servicio::orderBy('nombre')->get();
+        $filters = $request->only(['q', 'activo']);
+        $servicios = Servicio::query()
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $search = trim((string) $request->query('q'));
 
-        return view('Servicios.index', compact('servicios'));
+                $query->where(function ($query) use ($search) {
+                    $query->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('descripcion', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->query('activo') !== null && $request->query('activo') !== '', function ($query) use ($request) {
+                $query->where('activo', filter_var($request->query('activo'), FILTER_VALIDATE_BOOLEAN));
+            })
+            ->orderBy('nombre')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('Servicios.index', compact('servicios', 'filters'));
     }
 
     public function create(): View

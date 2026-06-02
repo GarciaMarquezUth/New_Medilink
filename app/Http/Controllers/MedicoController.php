@@ -22,11 +22,28 @@ class MedicoController extends Controller
 
     private const PHOTO_MAX_DIMENSION = 900;
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $medicos = Medico::with(['user', 'servicios'])->get();
+        $filters = $request->only('q');
+        $medicos = Medico::with(['user', 'servicios'])
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $search = trim((string) $request->query('q'));
 
-        return view('Medicos.index', compact('medicos'));
+                $query->where(function ($query) use ($search) {
+                    $query->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('apellido', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('especialidad', 'like', "%{$search}%")
+                        ->orWhereHas('servicios', fn ($query) => $query->where('nombre', 'like', "%{$search}%"))
+                        ->orWhereHas('user', fn ($query) => $query->where('email', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy('nombre')
+            ->orderBy('apellido')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('Medicos.index', compact('medicos', 'filters'));
     }
 
     public function create(): View

@@ -19,7 +19,7 @@ class CitaController extends Controller
 {
     public function __construct(private AppointmentAvailabilityService $availability) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         /** @var User|null $user */
         $user = Auth::user();
@@ -27,27 +27,31 @@ class CitaController extends Controller
         if ($user && $user->hasAnyRole(['admin', 'recepcionista'])) {
             $this->authorizePermission('citas.ver');
 
-            $citas = Cita::with(['medico', 'paciente', 'servicio'])->latest()->get();
+            $query = Cita::with(['medico', 'paciente', 'servicio']);
         } elseif ($user && $user->hasRole('medico')) {
             $this->authorizePermission('citas.ver');
 
-            $citas = Cita::with(['medico', 'paciente', 'servicio'])
+            $query = Cita::with(['medico', 'paciente', 'servicio'])
                 ->whereHas('medico', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
-                })
-                ->latest()->get();
+                });
         } else {
-            $citas = Cita::with(['medico', 'paciente', 'servicio'])
+            $query = Cita::with(['medico', 'paciente', 'servicio'])
                 ->whereHas('paciente', function ($query) use ($user) {
                     $query->where('user_id', $user?->id);
-                })
-                ->latest()->get();
+                });
         }
+
+        $filters = $request->only(['q', 'estado', 'fecha_desde', 'fecha_hasta']);
+        $this->applyCitaFilters($query, $filters);
+
+        $citas = $query->latest()->paginate(15)->withQueryString();
 
         $estadoLabels = Cita::estados();
         $estadosOcupantes = Cita::estadosOcupantes();
+        $showEstadoFilter = ! ($user?->hasRole('paciente') && ! $user?->hasAnyRole(['admin', 'recepcionista', 'medico']));
 
-        return view('Citas.index', compact('citas', 'estadoLabels', 'estadosOcupantes'));
+        return view('Citas.index', compact('citas', 'estadoLabels', 'estadosOcupantes', 'filters', 'showEstadoFilter'));
     }
 
     public function create(Request $request): View
@@ -209,7 +213,7 @@ class CitaController extends Controller
         /** @var User|null $user */
         $user = Auth::user();
 
-        if (! $user || ! $user->hasAnyRole(['admin', 'recepcionista', 'medico']) || ! $user->can($permission)) {
+        if (! $user || ! $user->hasAnyRole(['admin', 'recepcionista']) || ! $user->can($permission)) {
             abort(403, 'Acceso denegado');
         }
     }
@@ -234,6 +238,42 @@ class CitaController extends Controller
             ->whereHas('medicos', fn ($query) => $query->where('medicos.id', $medicoId))
             ->orderBy('nombre')
             ->get();
+    }
+
+    private function applyCitaFilters($query, array $filters): void
+    {
+        if (! empty($filters['q'])) {
+            $search = trim($filters['q']);
+
+            $query->where(function ($query) use ($search) {
+                $query->where('motivo', 'like', "%{$search}%")
+                    ->orWhereHas('paciente', function ($query) use ($search) {
+                        $query->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('apellido', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('medico', function ($query) use ($search) {
+                        $query->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('apellido', 'like', "%{$search}%")
+                            ->orWhere('especialidad', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('servicio', function ($query) use ($search) {
+                        $query->where('nombre', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (! empty($filters['estado']) && array_key_exists($filters['estado'], Cita::estados())) {
+            $query->where('estado', $filters['estado']);
+        }
+
+        if (! empty($filters['fecha_desde'])) {
+            $query->whereDate('fecha_hora', '>=', $filters['fecha_desde']);
+        }
+
+        if (! empty($filters['fecha_hasta'])) {
+            $query->whereDate('fecha_hora', '<=', $filters['fecha_hasta']);
+        }
     }
 
     private function authorizeMedicoCita(Cita $cita): void

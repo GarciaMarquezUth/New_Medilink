@@ -776,7 +776,9 @@ class RoleAccessTest extends TestCase
 
     private function createCitaForMedico(string $pacienteNombre, string $medicoNombre, ?User $medicoUser = null): Cita
     {
-        $medico = $this->createMedico($medicoNombre, $medicoUser);
+        $medico = $medicoUser
+            ? Medico::where('user_id', $medicoUser->id)->first() ?: $this->createMedico($medicoNombre, $medicoUser)
+            : $this->createMedico($medicoNombre);
         $paciente = $this->createPaciente($pacienteNombre);
 
         return Cita::create([

@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteCitaController;
@@ -15,10 +15,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route('portal-citas.index');
 });
-
-// Rutas de autenticación
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Portal publico para solicitud de citas
 Route::get('/portal-citas', [PortalCitaController::class, 'create'])->name('portal-citas.index');
@@ -34,9 +30,9 @@ Route::middleware('auth')->group(function () {
 });
 
 // Grupo de rutas protegidas
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
 
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::view('profile', 'profile')->name('profile');
 
     Route::prefix('dashboard')->group(function () {
@@ -88,7 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('citas.index')
             ->middleware('role_or_permission:paciente|citas.ver');
 
-        Route::middleware(['role:admin|recepcionista|medico'])->group(function () {
+        Route::middleware(['role:admin|recepcionista'])->group(function () {
             Route::get('citas/create', [CitaController::class, 'create'])->name('citas.create')->middleware('permission:citas.crear');
             Route::post('citas', [CitaController::class, 'store'])->name('citas.store')->middleware('permission:citas.crear');
             Route::delete('citas/{cita}', [CitaController::class, 'destroy'])->name('citas.destroy')->middleware('permission:citas.eliminar');

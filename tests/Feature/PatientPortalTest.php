@@ -285,7 +285,7 @@ class PatientPortalTest extends TestCase
             'medico_id' => $medico->id,
             'servicio_id' => $servicio->id,
             'fecha' => '2026-06-01',
-            'horario' => '2026-06-01T09:15',
+            'horario' => '2026-06-01T09:30',
             'nombre' => 'Paciente',
             'apellido' => 'Confirmado',
             'email' => 'confirmado@example.com',
@@ -315,7 +315,7 @@ class PatientPortalTest extends TestCase
         $this->assertDatabaseHas('citas', [
             'medico_id' => $medico->id,
             'servicio_id' => $servicio->id,
-            'fecha_hora' => '2026-06-01 09:15:00',
+            'fecha_hora' => '2026-06-01 09:30:00',
             'motivo' => 'Consulta pendiente',
             'estado' => Cita::ESTADO_AGENDADA,
         ]);
@@ -623,7 +623,7 @@ class PatientPortalTest extends TestCase
                 'medico_id' => $medico->id,
                 'servicio_id' => $servicio->id,
                 'fecha' => '2026-06-01',
-                'horario' => '2026-06-01T09:15',
+                'horario' => '2026-06-01T09:30',
                 'nombre' => 'Nombre Inyectado',
                 'apellido' => 'Apellido Inyectado',
                 'email' => 'otro@example.com',

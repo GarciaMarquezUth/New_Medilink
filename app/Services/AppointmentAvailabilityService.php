@@ -44,7 +44,7 @@ class AppointmentAvailabilityService
         return [$servicio, $inicio, $fin];
     }
 
-    public function availableSlots(int $medicoId, string $fecha, int $servicioId, ?int $ignoreCitaId = null, int $stepMinutes = 15): array
+    public function availableSlots(int $medicoId, string $fecha, int $servicioId, ?int $ignoreCitaId = null, ?int $stepMinutes = null): array
     {
         $servicio = Servicio::whereKey($servicioId)->where('activo', true)->first();
 
@@ -55,6 +55,8 @@ class AppointmentAvailabilityService
         if (! $this->medicoCanPerformService($medicoId, $servicioId)) {
             return [];
         }
+
+        $stepMinutes = max(1, $stepMinutes ?? $servicio->duracion_minutos);
 
         $date = Carbon::parse($fecha)->startOfDay();
         $diaSemana = $date->dayOfWeekIso;
@@ -89,7 +91,7 @@ class AppointmentAvailabilityService
         return array_values($slots);
     }
 
-    public function availableFutureSlots(int $medicoId, string $fecha, int $servicioId, ?int $ignoreCitaId = null, int $stepMinutes = 15): array
+    public function availableFutureSlots(int $medicoId, string $fecha, int $servicioId, ?int $ignoreCitaId = null, ?int $stepMinutes = null): array
     {
         return array_values(array_filter(
             $this->availableSlots($medicoId, $fecha, $servicioId, $ignoreCitaId, $stepMinutes),
@@ -97,7 +99,7 @@ class AppointmentAvailabilityService
         ));
     }
 
-    public function availableDates(int $medicoId, int $servicioId, int $daysAhead = 30, int $limit = 8, ?Carbon $from = null, ?int $ignoreCitaId = null, int $stepMinutes = 15): array
+    public function availableDates(int $medicoId, int $servicioId, int $daysAhead = 30, int $limit = 8, ?Carbon $from = null, ?int $ignoreCitaId = null, ?int $stepMinutes = null): array
     {
         $startDate = ($from ?: Carbon::today())->copy()->startOfDay();
         $dates = [];

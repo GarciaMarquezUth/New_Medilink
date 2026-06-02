@@ -33,13 +33,45 @@
             </div>
         @endif
 
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60 sm:p-6">
+            <form method="GET" action="{{ route('citas.index') }}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_180px_auto] lg:items-end">
+                <div>
+                    <x-input-label for="q" value="Buscar" />
+                    <x-text-input id="q" name="q" value="{{ $filters['q'] ?? '' }}" class="mt-2" placeholder="Paciente, médico, servicio o motivo" />
+                </div>
+                @if($showEstadoFilter)
+                    <div>
+                        <x-input-label for="estado" value="Estado" />
+                        <select id="estado" name="estado" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500">
+                            <option value="">Todos</option>
+                            @foreach($estadoLabels as $estado => $label)
+                                <option value="{{ $estado }}" @selected(($filters['estado'] ?? '') === $estado)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <div>
+                    <x-input-label for="fecha_desde" value="Desde" />
+                    <x-text-input id="fecha_desde" type="date" name="fecha_desde" value="{{ $filters['fecha_desde'] ?? '' }}" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label for="fecha_hasta" value="Hasta" />
+                    <x-text-input id="fecha_hasta" type="date" name="fecha_hasta" value="{{ $filters['fecha_hasta'] ?? '' }}" class="mt-2" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-700">Filtrar</button>
+                    <a href="{{ route('citas.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Limpiar</a>
+                </div>
+            </form>
+        </section>
+
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
             <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-extrabold text-slate-950">Agenda de citas</h2>
                     <p class="mt-1 text-sm font-medium text-slate-500">Consulta estados, servicios, pacientes y médicos asignados.</p>
                 </div>
-                <span class="rounded-full bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700">{{ $citas->count() }} registros</span>
+                <span class="rounded-full bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700">{{ $citas->total() }} registros</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -146,6 +178,10 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <div class="border-t border-slate-100 px-6 py-4">
+                {{ $citas->links() }}
             </div>
         </section>
     </div>

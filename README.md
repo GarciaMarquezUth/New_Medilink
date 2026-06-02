@@ -1,66 +1,122 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MediLink - Sistema Clinico
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+MediLink es una aplicacion Laravel para gestionar la operacion basica de una clinica: medicos, pacientes, servicios, disponibilidad semanal y citas.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Laravel 12
+- PHP 8.2 o superior
+- Livewire 3 y Volt
+- Blade y Tailwind CSS
+- Spatie Laravel Permission
+- Vite
+- PHPUnit
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Modulos Principales
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Portal publico de citas: permite seleccionar medico, servicio, fecha y horario.
+- Dashboard: cambia segun el rol del usuario.
+- Medicos: gestion de perfiles profesionales, foto, usuario vinculado y servicios.
+- Pacientes: gestion de datos personales y perfil medico.
+- Servicios: catalogo de atenciones con duracion, precio y estado.
+- Disponibilidades: horarios semanales por medico.
+- Citas: agenda clinica con validacion de disponibilidad y traslapes.
+- Permisos: matriz administrativa para activar o desactivar permisos por rol.
 
-## Learning Laravel
+## Roles
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Rol | Descripcion |
+| --- | --- |
+| admin | Administra permisos, medicos, pacientes, servicios, disponibilidades y citas. |
+| recepcionista | Gestiona operacion diaria de agenda, pacientes, medicos y servicios. |
+| medico | Consulta su agenda, gestiona su disponibilidad y marca citas propias como atendidas o no presentadas. |
+| paciente | Completa su perfil, agenda citas y cancela citas futuras propias. |
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Instalacion Local
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+```
 
-## Laravel Sponsors
+Para desarrollo completo:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer run dev
+```
 
-### Premium Partners
+Si usas fotos de medicos, crea el enlace publico de storage:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+php artisan storage:link
+```
 
-## Contributing
+## Usuarios Demo
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Despues de ejecutar `php artisan migrate --seed`, puedes entrar con:
 
-## Code of Conduct
+| Rol | Email | Password |
+| --- | --- | --- |
+| Admin | admin@example.com | password |
+| Recepcionista | recepcionista@example.com | password |
+| Medico | medico@example.com | password |
+| Paciente | paciente@example.com | password |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+El seeder tambien crea 10 servicios, 10 medicos, 10 pacientes, 10 disponibilidades y 10 citas demo.
 
-## Security Vulnerabilities
+## Flujo De Citas
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. El paciente entra a `/portal-citas`.
+2. Selecciona medico, servicio, fecha y horario.
+3. El sistema valida que el servicio pertenezca al medico.
+4. El sistema valida que el horario este dentro de la disponibilidad del medico.
+5. El sistema valida que no exista traslape con otra cita agendada o confirmada.
+6. Si el usuario es invitado, la cita queda pendiente en sesion hasta que inicie sesion o se registre.
+7. Antes de confirmar, el sistema revalida el horario para evitar dobles reservas.
 
-## License
+## Estados De Cita
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `agendada`
+- `confirmada`
+- `cancelada`
+- `atendida`
+- `no_show`
+
+Solo `agendada` y `confirmada` ocupan horario en la agenda.
+
+## Pruebas
+
+```bash
+vendor/bin/phpunit
+```
+
+Pruebas utiles por area:
+
+```bash
+vendor/bin/phpunit --filter PatientPortalTest
+vendor/bin/phpunit --filter RoleAccessTest
+vendor/bin/phpunit --filter PermissionManagementTest
+```
+
+## Archivos Clave
+
+- `routes/web.php`: rutas publicas, dashboard y recursos protegidos.
+- `routes/auth.php`: login, registro y paginas de autenticacion Volt.
+- `app/Http/Controllers/DashboardController.php`: datos del dashboard por rol.
+- `app/Services/AppointmentAvailabilityService.php`: calculo y validacion de horarios.
+- `app/Services/PendingAppointmentService.php`: citas pendientes de invitados.
+- `app/Services/PatientProfileService.php`: perfil medico del paciente.
+- `app/Support/ClinicPermissionCatalog.php`: catalogo de permisos por modulo y rol.
+- `resources/views/PortalCitas/create.blade.php`: portal publico de agendamiento.
+- `resources/views/dashboard.blade.php`: dashboard por rol.
+
+## Notas Tecnicas
+
+- Las pantallas de login y registro activas son Livewire Volt.
+- Los listados principales tienen filtros y paginacion.
+- El middleware de email verificado no se exige en el dashboard; la pantalla de verificacion queda disponible si se decide activar ese flujo mas adelante.
+- El rol medico no puede crear, editar ni eliminar citas desde el CRUD administrativo; solo puede cerrar sus propias citas como atendidas o no presentadas.
