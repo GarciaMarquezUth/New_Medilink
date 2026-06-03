@@ -20,7 +20,7 @@
     </head>
 
     <body class="min-h-screen bg-slate-100 font-sans text-slate-900 antialiased">
-        <main class="min-h-screen bg-slate-100">
+        <main class="min-h-screen bg-[radial-gradient(circle_at_top_left,#f3e8ff_0,#f8fafc_35%,#f1f5f9_100%)]">
             <header class="border-b border-slate-200 bg-white">
                 <div class="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
                     <a href="{{ route('portal-citas.index') }}" class="inline-flex items-center gap-3">
@@ -34,12 +34,12 @@
                 </div>
             </header>
 
-            <div class="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
-                <section class="rounded-3xl bg-gradient-to-br from-violet-800 via-violet-700 to-purple-700 px-5 py-7 text-white shadow-xl shadow-violet-950/15 sm:px-8">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-violet-100">Confirmación</p>
-                    <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Confirma tu cita médica</h1>
-                    <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-violet-50 sm:text-base">
-                        Ya iniciaste sesión. Antes de guardar la cita, validaremos nuevamente que el horario siga disponible.
+            <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+                <section class="rounded-[2rem] border border-white bg-white/90 px-5 py-7 text-center shadow-xl shadow-violet-950/10 backdrop-blur sm:px-8">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-violet-600">Último paso</p>
+                    <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Revisa y confirma tu cita</h1>
+                    <p class="mx-auto mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-600 sm:text-base">
+                        Confirma que los datos sean correctos. Validaremos el horario una vez más antes de guardar la cita.
                     </p>
                 </section>
 
@@ -50,10 +50,10 @@
                     </div>
                 @endif
 
-                <section class="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <section class="mt-5 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <div class="mb-5 border-b border-slate-100 pb-4">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Resumen de solicitud</p>
-                        <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Datos de la cita</h2>
+                        <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-violet-600">Resumen</p>
+                        <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-950">Datos que vamos a registrar</h2>
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -94,7 +94,7 @@
                     </div>
 
                     <div class="mt-5 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
-                        Confirmaremos la cita con tu usuario autenticado y la vincularemos a tu expediente de paciente.
+                        Al confirmar, la cita quedará vinculada a tu perfil de paciente.
                     </div>
 
                     <form action="{{ route('portal-citas.confirm.store') }}" method="POST" class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">

@@ -47,10 +47,9 @@
                     </a>
 
                     <nav class="hidden items-center gap-8 text-sm font-bold text-slate-600 lg:flex" aria-label="Navegación principal">
-                        <a href="#inicio" class="transition hover:text-violet-700">Inicio</a>
-                        <a href="#servicios" class="transition hover:text-violet-700">Servicios</a>
-                        <a href="#especialistas" class="transition hover:text-violet-700">Especialistas</a>
-                        <a href="#contacto" class="transition hover:text-violet-700">Contacto</a>
+                        <a href="#agenda" class="transition hover:text-violet-700">Agendar cita</a>
+                        <a href="#especialistas" class="transition hover:text-violet-700">Médicos</a>
+                        <a href="#contacto" class="transition hover:text-violet-700">Ayuda</a>
                     </nav>
 
                     <div class="flex items-center gap-3">
@@ -66,24 +65,24 @@
                 <div class="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-300/20 blur-3xl"></div>
                 <div class="absolute right-0 top-40 h-80 w-80 rounded-full bg-fuchsia-200/30 blur-3xl"></div>
 
-                <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_480px] lg:items-start lg:gap-14 lg:px-8 lg:py-14 xl:gap-16">
-                    <div class="flex flex-col justify-start lg:sticky lg:top-24 lg:self-start lg:pr-6">
-                        <span class="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-violet-700 shadow-sm">
+                <div class="relative mx-auto grid max-w-5xl gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+                    <div class="rounded-[2rem] border border-white bg-white/85 p-6 text-center shadow-xl shadow-violet-950/10 backdrop-blur sm:p-8">
+                        <span class="mx-auto inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-violet-700 shadow-sm">
                             <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                             Portal del paciente
                         </span>
 
-                        <h1 class="mt-6 max-w-3xl text-5xl font-black leading-[0.95] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
-                            Agenda tu cita médica
+                        <h1 class="mx-auto mt-5 max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                            Agenda tu cita en 4 pasos simples
                         </h1>
 
-                        <p class="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600">
-                            Elige especialista, servicio, fecha y horario en una experiencia digital moderna. MediLink valida disponibilidad real para que agendes con confianza y sin llamadas innecesarias.
+                        <p class="mx-auto mt-4 max-w-2xl text-base font-semibold leading-7 text-slate-600 sm:text-lg">
+                            Elige médico, servicio, fecha y horario. Luego completa tus datos y confirma tu solicitud.
                         </p>
 
-                        <div class="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-                            @foreach(['Fácil y rápido', 'Seguro', 'Sin filas', 'Recordatorios automáticos'] as $beneficio)
-                                <div class="flex items-center gap-3 rounded-2xl border border-white bg-white/80 px-4 py-3 shadow-sm shadow-slate-200/70">
+                        <div class="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            @foreach(['1. Médico', '2. Servicio', '3. Fecha', '4. Horario'] as $beneficio)
+                                <div class="flex items-center gap-3 rounded-2xl border border-violet-100 bg-white px-4 py-3 text-left shadow-sm shadow-slate-200/70">
                                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                     </span>
@@ -92,7 +91,7 @@
                             @endforeach
                         </div>
 
-                        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
                             <a href="#agenda" class="inline-flex items-center justify-center rounded-2xl bg-violet-700 px-6 py-4 text-sm font-black text-white shadow-xl shadow-violet-700/25 transition hover:-translate-y-0.5 hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200">
                                 Agendar ahora
                             </a>
@@ -101,25 +100,26 @@
                             </a>
                         </div>
 
-                        <div class="mt-6 max-w-2xl rounded-3xl border border-violet-100 bg-white/75 p-5 shadow-sm shadow-slate-200/70 backdrop-blur">
-                            <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Ayuda rápida</p>
-                            <p class="mt-2 text-sm font-semibold leading-6 text-slate-600">Selecciona médico, servicio y una fecha disponible. El formulario de la derecha se actualizará sin mover esta sección.</p>
+                        <div class="mx-auto mt-5 max-w-2xl rounded-3xl border border-violet-100 bg-violet-50 p-5 shadow-sm shadow-slate-200/70">
+                            <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Importante</p>
+                            <p class="mt-2 text-sm font-semibold leading-6 text-violet-900">Solo verás fechas y horarios realmente disponibles.</p>
                         </div>
                     </div>
 
-                <aside id="agenda" class="rounded-[2.25rem] border border-white bg-white/95 p-5 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-6 lg:self-start">
-                    <div class="rounded-[1.65rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-950/15">
-                        <div class="flex items-start justify-between gap-4">
+                <aside id="agenda" class="mx-auto w-full max-w-4xl rounded-[2.25rem] border border-white bg-white/95 p-4 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-6">
+                    <div class="rounded-[1.65rem] bg-violet-700 p-5 text-white shadow-xl shadow-violet-700/20 sm:p-6">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <p class="text-xs font-black uppercase tracking-[0.22em] text-violet-200">Agendador inteligente</p>
-                                <h2 class="mt-2 text-2xl font-black tracking-tight">Reserva en minutos</h2>
+                                <p class="text-xs font-black uppercase tracking-[0.22em] text-violet-100">Formulario de cita</p>
+                                <h2 class="mt-2 text-2xl font-black tracking-tight">Elige tu cita paso a paso</h2>
+                                <p class="mt-2 text-sm font-semibold leading-6 text-violet-100">Completa cada paso de arriba hacia abajo. Si cambias una opción, actualizaremos la disponibilidad.</p>
                             </div>
-                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-violet-100 ring-1 ring-white/10">Seguro</span>
+                            <span class="w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-black text-violet-50 ring-1 ring-white/15">Disponibilidad real</span>
                         </div>
 
-                        <div class="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] font-black uppercase tracking-wide text-slate-300">
+                        <div class="mt-5 grid grid-cols-2 gap-2 text-center text-[11px] font-black uppercase tracking-wide text-violet-100 sm:grid-cols-4">
                             @foreach(['1 Médico', '2 Servicio', '3 Fecha', '4 Horario'] as $paso)
-                                <div class="rounded-2xl bg-white/10 px-2 py-2 ring-1 ring-white/10">{{ $paso }}</div>
+                                <div class="rounded-2xl bg-white/15 px-2 py-2 ring-1 ring-white/15">{{ $paso }}</div>
                             @endforeach
                         </div>
                     </div>
@@ -149,13 +149,14 @@
                         </div>
                     @endif
 
-                    <section class="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                    <section class="mt-6 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                         <div class="mb-5 flex items-start justify-between gap-4">
                             <div>
-                                <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Disponibilidad</p>
-                                <h3 class="mt-1 text-xl font-black tracking-tight text-slate-950">Busca un horario disponible</h3>
+                                <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Primeros pasos</p>
+                                <h3 class="mt-1 text-xl font-black tracking-tight text-slate-950">Selecciona médico y servicio</h3>
+                                <p class="mt-2 text-sm font-semibold text-slate-500">Después de elegirlos aparecerán las fechas disponibles.</p>
                             </div>
-                            <span class="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700">Duración real</span>
+                            <span class="hidden rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700 sm:inline-flex">Paso 1 y 2</span>
                         </div>
 
                         <form
@@ -168,9 +169,9 @@
                             data-horarios-url-template="{{ route('portal-citas.horarios', ['medico' => '__MEDICO__', 'servicio' => '__SERVICIO__', 'fecha' => '__FECHA__']) }}"
                         >
                             <div>
-                                <label for="medico_id" class="block text-sm font-black text-slate-800">Paso 1: Médico</label>
-                                <select id="medico_id" name="medico_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
-                                    <option value="">Selecciona médico</option>
+                                <label for="medico_id" class="block text-sm font-black text-slate-800">1. ¿Con qué médico quieres atenderte?</label>
+                                <select id="medico_id" name="medico_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
+                                    <option value="">Elige un médico</option>
                                     @foreach ($medicos as $medico)
                                         <option value="{{ $medico->id }}" {{ (int) $selectedMedicoId === $medico->id ? 'selected' : '' }}>
                                             {{ $medico->nombre }} {{ $medico->apellido }} @if ($medico->especialidad) - {{ $medico->especialidad }} @endif
@@ -183,9 +184,9 @@
                             </div>
 
                             <div>
-                                <label for="servicio_id" class="block text-sm font-black text-slate-800">Paso 2: Servicio</label>
-                                <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
-                                    <option value="">{{ $selectedMedicoId ? 'Selecciona servicio' : 'Selecciona primero un médico' }}</option>
+                                <label for="servicio_id" class="block text-sm font-black text-slate-800">2. ¿Qué servicio necesitas?</label>
+                                <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
+                                    <option value="">{{ $selectedMedicoId ? 'Elige un servicio' : 'Primero elige un médico' }}</option>
                                     @foreach ($servicios as $servicio)
                                         <option value="{{ $servicio->id }}" {{ (int) $selectedServicioId === $servicio->id ? 'selected' : '' }}>
                                             {{ $servicio->nombre }} - {{ $servicio->duracion_minutos }} min @if ($servicio->precio !== null) - ${{ number_format((float) $servicio->precio, 2) }} @endif
@@ -206,11 +207,12 @@
                         <div class="flex items-end justify-between gap-3">
                             <div>
                                 <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Paso 3: Fecha</p>
-                                <h3 class="mt-1 text-xl font-black text-slate-950">Próximas fechas disponibles</h3>
+                                <h3 class="mt-1 text-xl font-black text-slate-950">Elige una fecha disponible</h3>
+                                <p class="mt-2 text-sm font-semibold text-slate-500">Toca una fecha para ver los horarios.</p>
                             </div>
                         </div>
 
-                        <div id="fechas-grid" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div id="fechas-grid" class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                             @foreach ($fechasDisponibles as $fechaDisponible)
                                 @php
                                     $date = \Carbon\Carbon::parse($fechaDisponible['value']);
@@ -234,10 +236,11 @@
                         @enderror
                     </section>
 
-                        <section id="booking-section" class="{{ $selectionComplete ? '' : 'hidden' }} mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-                            <div class="rounded-2xl bg-slate-50 p-4">
+                        <section id="booking-section" class="{{ $selectionComplete ? '' : 'hidden' }} mt-6 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                            <div class="rounded-2xl border border-violet-100 bg-violet-50 p-4">
                                 <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Resumen</p>
-                                <div class="mt-4 grid gap-4 text-sm font-bold text-slate-700">
+                                <h3 class="mt-1 text-xl font-black text-slate-950">Tu selección</h3>
+                                <div class="mt-4 grid gap-3 text-sm font-bold text-slate-700 sm:grid-cols-3">
                                     <div class="rounded-3xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
                                         <span class="block text-xs uppercase tracking-wide text-slate-400">Médico</span>
                                         <span id="summary-medico">{{ $selectedMedico?->nombre }} {{ $selectedMedico?->apellido }}</span>
@@ -263,11 +266,12 @@
                                     <div class="flex items-end justify-between gap-3">
                                         <div>
                                             <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Paso 4: Horario</p>
-                                            <h3 class="mt-1 text-xl font-black text-slate-950">Elige tu horario</h3>
+                                            <h3 class="mt-1 text-xl font-black text-slate-950">Elige la hora que prefieres</h3>
+                                            <p class="mt-2 text-sm font-semibold text-slate-500">Toca un horario para seleccionarlo.</p>
                                         </div>
                                     </div>
 
-                                    <div id="horarios-grid" class="mt-6 grid grid-cols-2 gap-4">
+                                    <div id="horarios-grid" class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
                                         @foreach ($horarios as $slot)
                                             <label class="block select-none">
                                                 <input type="radio" name="horario" value="{{ $slot['value'] }}" class="peer sr-only" {{ old('horario') === $slot['value'] ? 'checked' : '' }} required>
@@ -341,7 +345,7 @@
 
                                     <div class="@guest mt-6 @endguest">
                                         <label for="motivo" class="block text-sm font-black text-slate-800">Motivo de consulta</label>
-                                        <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" required>{{ old('motivo') }}</textarea>
+                                        <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" placeholder="Ejemplo: dolor de cabeza, control médico, seguimiento..." required>{{ old('motivo') }}</textarea>
                                         @error('motivo')
                                             <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                         @enderror
@@ -668,10 +672,10 @@
                     const placeholder = document.createElement('option');
                     placeholder.value = '';
                     placeholder.textContent = ! state.medicoId
-                        ? 'Selecciona primero un médico'
+                        ? 'Primero elige un médico'
                         : state.loadingServices
                             ? 'Cargando servicios...'
-                            : 'Selecciona servicio';
+                            : 'Elige un servicio';
                     servicioSelect.appendChild(placeholder);
 
                     state.servicios.forEach((servicio) => {
@@ -701,7 +705,7 @@
                     if (state.loadingDates) {
                         const loadingCard = document.createElement('div');
                         loadingCard.className = 'col-span-full rounded-3xl border border-violet-100 bg-violet-50 px-4 py-5 text-sm font-black text-violet-700';
-                        loadingCard.textContent = 'Buscando próximas fechas disponibles...';
+                        loadingCard.textContent = 'Buscando fechas disponibles...';
                         fechasGrid.replaceChildren(loadingCard);
                         noFechasMessage.classList.add('hidden');
                         return;
