@@ -8,6 +8,7 @@ use App\Models\Paciente;
 use App\Models\Servicio;
 use App\Models\User;
 use App\Services\AppointmentAvailabilityService;
+use App\Services\AppointmentEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,10 @@ use Illuminate\View\View;
 
 class CitaController extends Controller
 {
-    public function __construct(private AppointmentAvailabilityService $availability) {}
+    public function __construct(
+        private AppointmentAvailabilityService $availability,
+        private AppointmentEmailService $emails,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -90,7 +94,7 @@ class CitaController extends Controller
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
         $validated['estado'] = Cita::ESTADO_AGENDADA;
 
-        DB::transaction(function () use ($validated) {
+        $cita = DB::transaction(function () use ($validated) {
             $this->availability->validateCanSchedule(
                 (int) $validated['medico_id'],
                 (int) $validated['servicio_id'],
@@ -98,8 +102,10 @@ class CitaController extends Controller
                 lock: true,
             );
 
-            Cita::create($validated);
+            return Cita::create($validated);
         });
+
+        $this->emails->sendConfirmation($cita);
 
         return redirect()->route('citas.index')->with('success', 'Cita agendada correctamente.');
     }
@@ -131,6 +137,7 @@ class CitaController extends Controller
         $this->authorizeCitaManagement('citas.editar');
 
         $cita = Cita::findOrFail($id);
+        $wasCancelled = $cita->estado === Cita::ESTADO_CANCELADA;
 
         $validated = $request->validate([
             'medico_id' => 'required|exists:medicos,id',
@@ -159,6 +166,12 @@ class CitaController extends Controller
             $cita->update($validated);
         });
 
+        $cita->refresh();
+
+        if (! $wasCancelled && $cita->estado === Cita::ESTADO_CANCELADA) {
+            $this->emails->sendCancellation($cita);
+        }
+
         return redirect()->route('citas.index')->with('success', 'Cita actualizada correctamente.');
     }
 
@@ -166,7 +179,12 @@ class CitaController extends Controller
     {
         $this->authorizeCitaManagement('citas.eliminar');
 
-        Cita::findOrFail($id)->delete();
+        $cita = Cita::with(['paciente', 'medico', 'servicio'])->findOrFail($id);
+        $cita->estado = Cita::ESTADO_CANCELADA;
+
+        $this->emails->sendCancellation($cita);
+
+        $cita->delete();
 
         return redirect()->route('citas.index')->with('success', 'Cita eliminada.');
     }
@@ -204,6 +222,8 @@ class CitaController extends Controller
         }
 
         $cita->update(['estado' => Cita::ESTADO_CANCELADA]);
+
+        $this->emails->sendCancellation($cita->refresh());
 
         return back()->with('success', 'Cita cancelada correctamente.');
     }

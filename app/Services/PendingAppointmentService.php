@@ -22,7 +22,10 @@ class PendingAppointmentService
 
     public const UNAVAILABLE_MESSAGE = 'Ese horario ya no está disponible, selecciona otro.';
 
-    public function __construct(private AppointmentAvailabilityService $availability) {}
+    public function __construct(
+        private AppointmentAvailabilityService $availability,
+        private AppointmentEmailService $emails,
+    ) {}
 
     public function hasPending(): bool
     {
@@ -126,7 +129,7 @@ class PendingAppointmentService
         $inicio = $this->validateSelectedDateTime($payload['fecha'], $payload['horario']);
         $this->ensureSlotWasOffered((int) $payload['medico_id'], (int) $payload['servicio_id'], $payload['fecha'], $inicio);
 
-        return DB::transaction(function () use ($payload, $inicio, $user) {
+        $cita = DB::transaction(function () use ($payload, $inicio, $user) {
             try {
                 $this->availability->validateCanSchedule(
                     (int) $payload['medico_id'],
@@ -151,6 +154,10 @@ class PendingAppointmentService
                 'estado' => Cita::ESTADO_AGENDADA,
             ]);
         });
+
+        $this->emails->sendConfirmation($cita);
+
+        return $cita;
     }
 
     public function confirmPendingFor(User $user): Cita

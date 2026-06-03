@@ -27,6 +27,7 @@ class Cita extends Model
         'fecha_hora',
         'motivo',
         'estado',
+        'recordatorio_enviado_at',
     ];
 
     protected $attributes = [
@@ -37,6 +38,7 @@ class Cita extends Model
     {
         return [
             'fecha_hora' => 'datetime',
+            'recordatorio_enviado_at' => 'datetime',
         ];
     }
 

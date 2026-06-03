@@ -66,7 +66,7 @@
                 <div class="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-300/20 blur-3xl"></div>
                 <div class="absolute right-0 top-40 h-80 w-80 rounded-full bg-fuchsia-200/30 blur-3xl"></div>
 
-                <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-start lg:gap-10 lg:px-8 lg:py-12 xl:gap-12">
+                <div class="relative mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_480px] lg:items-start lg:gap-14 lg:px-8 lg:py-14 xl:gap-16">
                     <div class="flex flex-col justify-start lg:sticky lg:top-24 lg:self-start lg:pr-6">
                         <span class="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-violet-700 shadow-sm">
                             <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
@@ -107,146 +107,146 @@
                         </div>
                     </div>
 
-                    <aside id="agenda" class="rounded-[2rem] border border-white bg-white/90 p-4 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-5 lg:self-start">
-                        <div class="rounded-[1.65rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-950/15">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-xs font-black uppercase tracking-[0.22em] text-violet-200">Agendador inteligente</p>
-                                    <h2 class="mt-2 text-2xl font-black tracking-tight">Reserva en minutos</h2>
-                                </div>
-                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-violet-100 ring-1 ring-white/10">Seguro</span>
+                <aside id="agenda" class="rounded-[2.25rem] border border-white bg-white/95 p-5 shadow-2xl shadow-violet-950/10 backdrop-blur sm:p-6 lg:self-start">
+                    <div class="rounded-[1.65rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-950/15">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.22em] text-violet-200">Agendador inteligente</p>
+                                <h2 class="mt-2 text-2xl font-black tracking-tight">Reserva en minutos</h2>
+                            </div>
+                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-violet-100 ring-1 ring-white/10">Seguro</span>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] font-black uppercase tracking-wide text-slate-300">
+                            @foreach(['1 Médico', '2 Servicio', '3 Fecha', '4 Horario'] as $paso)
+                                <div class="rounded-2xl bg-white/10 px-2 py-2 ring-1 ring-white/10">{{ $paso }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    @if (session('success'))
+                        <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800 shadow-sm">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if (session('status'))
+                        <div class="mt-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 text-sm font-bold text-violet-800 shadow-sm">
+                            {{ session('status') }}
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800 shadow-sm">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    @if ($errors->any())
+                        <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-sm">
+                            <p class="font-black">Revisa la información ingresada.</p>
+                            <p class="mt-1">Algunos datos no son válidos o el horario seleccionado ya no está disponible.</p>
+                        </div>
+                    @endif
+
+                    <section class="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <div class="mb-5 flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Disponibilidad</p>
+                                <h3 class="mt-1 text-xl font-black tracking-tight text-slate-950">Busca un horario disponible</h3>
+                            </div>
+                            <span class="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700">Duración real</span>
+                        </div>
+
+                        <form
+                            id="portal-cita-picker"
+                            action="{{ route('portal-citas.index') }}"
+                            method="GET"
+                            class="space-y-6"
+                            data-servicios-url-template="{{ route('portal-citas.servicios', ['medico' => '__MEDICO__']) }}"
+                            data-fechas-url-template="{{ route('portal-citas.fechas', ['medico' => '__MEDICO__', 'servicio' => '__SERVICIO__']) }}"
+                            data-horarios-url-template="{{ route('portal-citas.horarios', ['medico' => '__MEDICO__', 'servicio' => '__SERVICIO__', 'fecha' => '__FECHA__']) }}"
+                        >
+                            <div>
+                                <label for="medico_id" class="block text-sm font-black text-slate-800">Paso 1: Médico</label>
+                                <select id="medico_id" name="medico_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
+                                    <option value="">Selecciona médico</option>
+                                    @foreach ($medicos as $medico)
+                                        <option value="{{ $medico->id }}" {{ (int) $selectedMedicoId === $medico->id ? 'selected' : '' }}>
+                                            {{ $medico->nombre }} {{ $medico->apellido }} @if ($medico->especialidad) - {{ $medico->especialidad }} @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('medico_id')
+                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
 
-                            <div class="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] font-black uppercase tracking-wide text-slate-300">
-                                @foreach(['1 Médico', '2 Servicio', '3 Fecha', '4 Horario'] as $paso)
-                                    <div class="rounded-2xl bg-white/10 px-2 py-2 ring-1 ring-white/10">{{ $paso }}</div>
-                                @endforeach
+                            <div>
+                                <label for="servicio_id" class="block text-sm font-black text-slate-800">Paso 2: Servicio</label>
+                                <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
+                                    <option value="">{{ $selectedMedicoId ? 'Selecciona servicio' : 'Selecciona primero un médico' }}</option>
+                                    @foreach ($servicios as $servicio)
+                                        <option value="{{ $servicio->id }}" {{ (int) $selectedServicioId === $servicio->id ? 'selected' : '' }}>
+                                            {{ $servicio->nombre }} - {{ $servicio->duracion_minutos }} min @if ($servicio->precio !== null) - ${{ number_format((float) $servicio->precio, 2) }} @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p id="sin-servicios-medico" class="{{ $selectedMedicoId && $servicios->isEmpty() ? '' : 'hidden' }} mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">Este médico no tiene servicios disponibles.</p>
+                                @error('servicio_id')
+                                    <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </form>
+
+                        <p id="portal-loading-error" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"></p>
+                    </section>
+
+                    <section id="fechas-section" class="{{ $canChooseDate ? '' : 'hidden' }} mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                        <div class="flex items-end justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Paso 3: Fecha</p>
+                                <h3 class="mt-1 text-xl font-black text-slate-950">Próximas fechas disponibles</h3>
                             </div>
                         </div>
 
-                        @if (session('success'))
-                            <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-800 shadow-sm">
-                                {{ session('success') }}
-                            </div>
-                        @endif
+                        <div id="fechas-grid" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            @foreach ($fechasDisponibles as $fechaDisponible)
+                                @php
+                                    $date = \Carbon\Carbon::parse($fechaDisponible['value']);
+                                    $selectedDateCard = $selectedFecha === $fechaDisponible['value'];
+                                @endphp
+                                <button type="button" data-date-value="{{ $fechaDisponible['value'] }}" class="group flex min-h-32 flex-col justify-between rounded-3xl border px-4 py-3 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-violet-200 {{ $selectedDateCard ? 'border-violet-700 bg-violet-700 text-white shadow-lg shadow-violet-700/20' : 'border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md' }}">
+                                    <span class="text-xs font-black uppercase tracking-[0.18em] {{ $selectedDateCard ? 'text-violet-100' : 'text-violet-600' }}">{{ $weekdayShort[$date->dayOfWeekIso] }}</span>
+                                    <span class="text-3xl font-black leading-none">{{ $date->format('d') }}</span>
+                                    <span class="text-[11px] font-extrabold {{ $selectedDateCard ? 'text-violet-100' : 'text-slate-500' }}">{{ $fechaDisponible['slots_count'] }} horarios disponibles</span>
+                                </button>
+                            @endforeach
+                        </div>
 
-                        @if (session('status'))
-                            <div class="mt-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 text-sm font-bold text-violet-800 shadow-sm">
-                                {{ session('status') }}
-                            </div>
-                        @endif
+                        <div id="no-fechas-message" class="{{ $canChooseDate && count($fechasDisponibles) === 0 ? '' : 'hidden' }} mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-5 text-center">
+                            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-black text-violet-700 shadow-sm">i</div>
+                            <h2 class="mt-3 text-lg font-black text-violet-950">No hay fechas disponibles para este médico y servicio.</h2>
+                        </div>
 
-                        @if (session('error'))
-                            <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-800 shadow-sm">
-                                {{ session('error') }}
-                            </div>
-                        @endif
+                        @error('fecha')
+                            <p class="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{{ $message }}</p>
+                        @enderror
+                    </section>
 
-                        @if ($errors->any())
-                            <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-sm">
-                                <p class="font-black">Revisa la información ingresada.</p>
-                                <p class="mt-1">Algunos datos no son válidos o el horario seleccionado ya no está disponible.</p>
-                            </div>
-                        @endif
-
-                        <section class="mt-4 rounded-[1.65rem] border border-slate-200 bg-white p-5 shadow-sm">
-                            <div class="mb-5 flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Disponibilidad</p>
-                                    <h3 class="mt-1 text-xl font-black tracking-tight text-slate-950">Busca un horario disponible</h3>
-                                </div>
-                                <span class="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-black text-violet-700">Duración real</span>
-                            </div>
-
-                            <form
-                                id="portal-cita-picker"
-                                action="{{ route('portal-citas.index') }}"
-                                method="GET"
-                                class="space-y-4"
-                                data-servicios-url-template="{{ route('portal-citas.servicios', ['medico' => '__MEDICO__']) }}"
-                                data-fechas-url-template="{{ route('portal-citas.fechas', ['medico' => '__MEDICO__', 'servicio' => '__SERVICIO__']) }}"
-                                data-horarios-url-template="{{ route('portal-citas.horarios', ['medico' => '__MEDICO__', 'servicio' => '__SERVICIO__', 'fecha' => '__FECHA__']) }}"
-                            >
-                                <div>
-                                    <label for="medico_id" class="block text-sm font-black text-slate-800">Paso 1: Médico</label>
-                                    <select id="medico_id" name="medico_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required>
-                                        <option value="">Selecciona médico</option>
-                                        @foreach ($medicos as $medico)
-                                            <option value="{{ $medico->id }}" {{ (int) $selectedMedicoId === $medico->id ? 'selected' : '' }}>
-                                                {{ $medico->nombre }} {{ $medico->apellido }} @if ($medico->especialidad) - {{ $medico->especialidad }} @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('medico_id')
-                                        <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="servicio_id" class="block text-sm font-black text-slate-800">Paso 2: Servicio</label>
-                                    <select id="servicio_id" name="servicio_id" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-bold text-slate-800 shadow-sm transition focus:border-violet-500 focus:ring-violet-500" required {{ ! $selectedMedicoId || $servicios->isEmpty() ? 'disabled' : '' }}>
-                                        <option value="">{{ $selectedMedicoId ? 'Selecciona servicio' : 'Selecciona primero un médico' }}</option>
-                                        @foreach ($servicios as $servicio)
-                                            <option value="{{ $servicio->id }}" {{ (int) $selectedServicioId === $servicio->id ? 'selected' : '' }}>
-                                                {{ $servicio->nombre }} - {{ $servicio->duracion_minutos }} min @if ($servicio->precio !== null) - ${{ number_format((float) $servicio->precio, 2) }} @endif
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <p id="sin-servicios-medico" class="{{ $selectedMedicoId && $servicios->isEmpty() ? '' : 'hidden' }} mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">Este médico no tiene servicios disponibles.</p>
-                                    @error('servicio_id')
-                                        <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </form>
-
-                            <p id="portal-loading-error" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"></p>
-                        </section>
-
-                        <section id="fechas-section" class="{{ $canChooseDate ? '' : 'hidden' }} mt-4 rounded-[1.65rem] border border-slate-200 bg-white p-5 shadow-sm">
-                            <div class="flex items-end justify-between gap-3">
-                                <div>
-                                    <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Paso 3: Fecha</p>
-                                    <h3 class="mt-1 text-xl font-black text-slate-950">Próximas fechas disponibles</h3>
-                                </div>
-                            </div>
-
-                            <div id="fechas-grid" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                @foreach ($fechasDisponibles as $fechaDisponible)
-                                    @php
-                                        $date = \Carbon\Carbon::parse($fechaDisponible['value']);
-                                        $selectedDateCard = $selectedFecha === $fechaDisponible['value'];
-                                    @endphp
-                                    <button type="button" data-date-value="{{ $fechaDisponible['value'] }}" class="group flex min-h-24 flex-col justify-between rounded-3xl border px-4 py-3 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-violet-200 {{ $selectedDateCard ? 'border-violet-700 bg-violet-700 text-white shadow-lg shadow-violet-700/20' : 'border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md' }}">
-                                        <span class="text-xs font-black uppercase tracking-[0.18em] {{ $selectedDateCard ? 'text-violet-100' : 'text-violet-600' }}">{{ $weekdayShort[$date->dayOfWeekIso] }}</span>
-                                        <span class="text-3xl font-black leading-none">{{ $date->format('d') }}</span>
-                                        <span class="text-[11px] font-extrabold {{ $selectedDateCard ? 'text-violet-100' : 'text-slate-500' }}">{{ $fechaDisponible['slots_count'] }} horarios disponibles</span>
-                                    </button>
-                                @endforeach
-                            </div>
-
-                            <div id="no-fechas-message" class="{{ $canChooseDate && count($fechasDisponibles) === 0 ? '' : 'hidden' }} mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-5 text-center">
-                                <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-black text-violet-700 shadow-sm">i</div>
-                                <h2 class="mt-3 text-lg font-black text-violet-950">No hay fechas disponibles para este médico y servicio.</h2>
-                            </div>
-
-                            @error('fecha')
-                                <p class="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{{ $message }}</p>
-                            @enderror
-                        </section>
-
-                        <section id="booking-section" class="{{ $selectionComplete ? '' : 'hidden' }} mt-4 rounded-[1.65rem] border border-slate-200 bg-white p-5 shadow-sm">
+                        <section id="booking-section" class="{{ $selectionComplete ? '' : 'hidden' }} mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                             <div class="rounded-2xl bg-slate-50 p-4">
                                 <p class="text-xs font-black uppercase tracking-[0.2em] text-violet-600">Resumen</p>
-                                <div class="mt-3 grid gap-2 text-sm font-bold text-slate-700">
-                                    <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                                <div class="mt-4 grid gap-4 text-sm font-bold text-slate-700">
+                                    <div class="rounded-3xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
                                         <span class="block text-xs uppercase tracking-wide text-slate-400">Médico</span>
                                         <span id="summary-medico">{{ $selectedMedico?->nombre }} {{ $selectedMedico?->apellido }}</span>
                                     </div>
-                                    <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                                    <div class="rounded-3xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
                                         <span class="block text-xs uppercase tracking-wide text-slate-400">Servicio</span>
                                         <span id="summary-servicio">{{ $selectedServicio?->nombre }} @if ($selectedServicio) - {{ $selectedServicio->duracion_minutos }} min @endif</span>
                                     </div>
-                                    <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                                    <div class="rounded-3xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
                                         <span class="block text-xs uppercase tracking-wide text-slate-400">Fecha</span>
                                         <span id="summary-fecha">{{ $selectedFechaLabel }}</span>
                                     </div>
@@ -267,11 +267,11 @@
                                         </div>
                                     </div>
 
-                                    <div id="horarios-grid" class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                    <div id="horarios-grid" class="mt-6 grid grid-cols-2 gap-4">
                                         @foreach ($horarios as $slot)
                                             <label class="block select-none">
                                                 <input type="radio" name="horario" value="{{ $slot['value'] }}" class="peer sr-only" {{ old('horario') === $slot['value'] ? 'checked' : '' }} required>
-                                                <span class="flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center shadow-sm transition hover:border-violet-300 hover:bg-white peer-checked:border-violet-700 peer-checked:bg-violet-700 peer-checked:text-white peer-checked:shadow-lg peer-checked:shadow-violet-700/20 peer-focus:ring-4 peer-focus:ring-violet-200">
+                                                <span class="flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center shadow-sm transition hover:border-violet-300 hover:bg-white peer-checked:border-violet-700 peer-checked:bg-violet-700 peer-checked:text-white peer-checked:shadow-lg peer-checked:shadow-violet-700/20 peer-focus:ring-4 peer-focus:ring-violet-200">
                                                     <span class="text-base font-black leading-none">{{ $slot['label'] }}</span>
                                                     <span class="mt-1 text-[11px] font-bold opacity-75">Termina {{ $slot['ends_at'] }}</span>
                                                 </span>
@@ -304,10 +304,10 @@
                                     </div>
 
                                     @guest
-                                        <div class="grid gap-4 md:grid-cols-2">
+                                        <div class="grid gap-6 md:grid-cols-2">
                                             <div>
                                                 <label for="nombre" class="block text-sm font-black text-slate-800">Nombre</label>
-                                                <input id="nombre" type="text" name="nombre" value="{{ old('nombre') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="given-name" required>
+                                                <input id="nombre" type="text" name="nombre" value="{{ old('nombre') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="given-name" required>
                                                 @error('nombre')
                                                     <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                                 @enderror
@@ -315,7 +315,7 @@
 
                                             <div>
                                                 <label for="apellido" class="block text-sm font-black text-slate-800">Apellido</label>
-                                                <input id="apellido" type="text" name="apellido" value="{{ old('apellido') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="family-name" required>
+                                                <input id="apellido" type="text" name="apellido" value="{{ old('apellido') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="family-name" required>
                                                 @error('apellido')
                                                     <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                                 @enderror
@@ -323,7 +323,7 @@
 
                                             <div>
                                                 <label for="email" class="block text-sm font-black text-slate-800">Email</label>
-                                                <input id="email" type="email" name="email" value="{{ old('email') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="email" required>
+                                                <input id="email" type="email" name="email" value="{{ old('email') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="email" required>
                                                 @error('email')
                                                     <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                                 @enderror
@@ -331,7 +331,7 @@
 
                                             <div>
                                                 <label for="telefono" class="block text-sm font-black text-slate-800">Teléfono</label>
-                                                <input id="telefono" type="tel" name="telefono" value="{{ old('telefono') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="tel" required>
+                                                <input id="telefono" type="tel" name="telefono" value="{{ old('telefono') }}" class="mt-2 block w-full rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" autocomplete="tel" required>
                                                 @error('telefono')
                                                     <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                                 @enderror
@@ -339,9 +339,9 @@
                                         </div>
                                     @endguest
 
-                                    <div class="@guest mt-4 @endguest">
+                                    <div class="@guest mt-6 @endguest">
                                         <label for="motivo" class="block text-sm font-black text-slate-800">Motivo de consulta</label>
-                                        <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" required>{{ old('motivo') }}</textarea>
+                                        <textarea id="motivo" name="motivo" rows="4" class="mt-2 block w-full resize-none rounded-2xl border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-violet-500 focus:ring-violet-500" required>{{ old('motivo') }}</textarea>
                                         @error('motivo')
                                             <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
                                         @enderror
@@ -355,14 +355,14 @@
                                         @endguest
                                     </div>
 
-                                    <button type="submit" class="mt-5 inline-flex w-full select-none items-center justify-center rounded-2xl bg-violet-700 px-6 py-4 text-base font-black text-white shadow-xl shadow-violet-700/25 transition hover:-translate-y-0.5 hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200">
+                                    <button type="submit" class="mt-8 inline-flex w-full select-none items-center justify-center rounded-3xl bg-violet-700 px-6 py-5 text-base font-black text-white shadow-xl shadow-violet-700/25 transition hover:-translate-y-0.5 hover:bg-violet-800 focus:outline-none focus:ring-4 focus:ring-violet-200">
                                         @auth Confirmar cita @else Solicitar cita @endauth
                                     </button>
                                 </div>
                             </form>
                         </section>
 
-                        <section id="empty-state" class="{{ $canChooseDate ? 'hidden' : '' }} mt-4 rounded-[1.65rem] border border-violet-200 bg-violet-50 p-5 text-center shadow-sm">
+                        <section id="empty-state" class="{{ $canChooseDate ? 'hidden' : '' }} mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                             <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg font-black text-violet-700 shadow-sm">i</div>
                             <h2 class="mt-3 text-lg font-black text-violet-950">Completa la búsqueda</h2>
                             <p class="mx-auto mt-1 max-w-2xl text-sm font-semibold leading-6 text-violet-800">
@@ -654,13 +654,13 @@
                 };
 
                 const dateButtonClasses = (selected) => [
-                    'group flex min-h-24 flex-col justify-between rounded-3xl border px-4 py-3 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-violet-200',
+                    'group flex min-h-32 flex-col justify-between rounded-3xl border px-5 py-4 text-left shadow-sm transition focus:outline-none focus:ring-4 focus:ring-violet-200',
                     selected
                         ? 'border-violet-700 bg-violet-700 text-white shadow-lg shadow-violet-700/20'
                         : 'border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md',
                 ].join(' ');
 
-                const slotButtonClasses = () => 'flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center shadow-sm transition hover:border-violet-300 hover:bg-white peer-checked:border-violet-700 peer-checked:bg-violet-700 peer-checked:text-white peer-checked:shadow-lg peer-checked:shadow-violet-700/20 peer-focus:ring-4 peer-focus:ring-violet-200';
+                const slotButtonClasses = () => 'flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-center shadow-sm transition hover:border-violet-300 hover:bg-white peer-checked:border-violet-700 peer-checked:bg-violet-700 peer-checked:text-white peer-checked:shadow-lg peer-checked:shadow-violet-700/20 peer-focus:ring-4 peer-focus:ring-violet-200';
 
                 const renderServiceOptions = () => {
                     servicioSelect.replaceChildren();

@@ -3,6 +3,7 @@
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisponibilidadController;
+use App\Http\Controllers\GmailOAuthController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteCitaController;
 use App\Http\Controllers\PacienteController;
@@ -27,6 +28,11 @@ Route::post('/portal-citas', [PortalCitaController::class, 'store'])->name('port
 Route::middleware('auth')->group(function () {
     Route::get('/portal-citas/confirmar', [PortalCitaController::class, 'confirm'])->name('portal-citas.confirm');
     Route::post('/portal-citas/confirmar', [PortalCitaController::class, 'confirmStore'])->name('portal-citas.confirm.store');
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/google/gmail/redirect', [GmailOAuthController::class, 'redirect'])->name('google.gmail.redirect');
+    Route::get('/google/gmail/callback', [GmailOAuthController::class, 'callback'])->name('google.gmail.callback');
 });
 
 // Grupo de rutas protegidas
