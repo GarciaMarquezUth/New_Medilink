@@ -451,6 +451,13 @@
                             </a>
                         @endcan
 
+                        @can('citas.ver')
+                            <a href="{{ route('citas.calendar') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
+                                <p class="text-sm font-bold text-slate-800">Calendario</p>
+                                <p class="mt-2 text-xs font-medium text-slate-500">Consulta la agenda mensual.</p>
+                            </a>
+                        @endcan
+
                         @can('pacientes.crear')
                             <a href="{{ route('pacientes.create') }}" class="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-violet-100 hover:bg-violet-50">
                                 <p class="text-sm font-bold text-slate-800">Nuevo paciente</p>
@@ -478,6 +485,13 @@
                                 <p class="mt-2 text-xs font-medium text-slate-500">Configura disponibilidad médica semanal.</p>
                             </a>
                         @endcan
+
+                        @hasanyrole(['admin', 'recepcionista'])
+                            <a href="{{ route('reportes.index') }}" class="rounded-3xl border border-violet-100 bg-white p-5 transition hover:-translate-y-1 hover:bg-violet-50">
+                                <p class="text-sm font-bold text-violet-700">Reportes</p>
+                                <p class="mt-2 text-xs font-medium text-slate-500">Analiza citas, pagos y servicios.</p>
+                            </a>
+                        @endhasanyrole
 
                         @role('admin')
                             <a href="{{ route('permisos.index') }}" class="rounded-3xl border border-violet-100 bg-white p-5 transition hover:-translate-y-1 hover:bg-violet-50">

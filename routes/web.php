@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CitaCalendarController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisponibilidadController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\PacienteCitaController;
 use App\Http\Controllers\PacienteController;
 use App\Http\Controllers\PermisoController;
 use App\Http\Controllers\PortalCitaController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ServicioController;
 use Illuminate\Support\Facades\Route;
 
@@ -90,6 +92,14 @@ Route::middleware('auth')->group(function () {
         Route::get('citas', [CitaController::class, 'index'])
             ->name('citas.index')
             ->middleware('role_or_permission:paciente|citas.ver');
+
+        Route::get('citas/calendario', [CitaCalendarController::class, 'index'])
+            ->name('citas.calendar')
+            ->middleware('role_or_permission:paciente|citas.ver');
+
+        Route::get('reportes', [ReporteController::class, 'index'])
+            ->name('reportes.index')
+            ->middleware(['role:admin|recepcionista', 'permission:citas.ver']);
 
         Route::middleware(['role:admin|recepcionista'])->group(function () {
             Route::get('citas/create', [CitaController::class, 'create'])->name('citas.create')->middleware('permission:citas.crear');

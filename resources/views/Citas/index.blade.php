@@ -1,10 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Agenda clínica</p>
-                <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Citas</h1>
-            </div>
+                <div>
+                    <p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Agenda clínica</p>
+                    <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">Citas</h1>
+                </div>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    @if(auth()->user()?->hasRole('paciente') || auth()->user()?->can('citas.ver'))
+                        <a href="{{ route('citas.calendar') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                            Calendario
+                        </a>
+                    @endif
             @can('citas.crear')
                 <a href="{{ route('citas.create') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition hover:-translate-y-0.5 hover:bg-violet-700">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
@@ -17,6 +23,7 @@
                     Agendar cita
                 </a>
             @endrole
+                </div>
         </div>
     </x-slot>
 
@@ -83,6 +90,7 @@
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Servicio</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Fecha</th>
                             <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Estado</th>
+                            <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Pago</th>
                             <th class="px-6 py-4 text-right text-xs font-extrabold uppercase tracking-wider text-slate-500">Acciones</th>
                         </tr>
                     </thead>
@@ -94,6 +102,12 @@
                                     'no_show' => 'bg-orange-50 text-orange-700 ring-orange-100',
                                     'cancelada' => 'bg-rose-50 text-rose-700 ring-rose-100',
                                     'confirmada' => 'bg-blue-50 text-blue-700 ring-blue-100',
+                                    default => 'bg-amber-50 text-amber-700 ring-amber-100',
+                                };
+                                $pagoClasses = match ($cita->estado_pago) {
+                                    'pagado' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+                                    'parcial' => 'bg-blue-50 text-blue-700 ring-blue-100',
+                                    'exento' => 'bg-slate-100 text-slate-700 ring-slate-200',
                                     default => 'bg-amber-50 text-amber-700 ring-amber-100',
                                 };
                             @endphp
@@ -123,6 +137,14 @@
                                     <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold capitalize ring-1 {{ $estadoClasses }}">
                                         {{ $estadoLabels[$cita->estado] ?? str_replace('_', ' ', $cita->estado) }}
                                     </span>
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold ring-1 {{ $pagoClasses }}">
+                                        {{ \App\Models\Cita::estadosPago()[$cita->estado_pago ?: \App\Models\Cita::PAGO_PENDIENTE] ?? 'Pendiente' }}
+                                    </span>
+                                    @if($cita->monto_pagado !== null)
+                                        <p class="mt-1 text-xs font-bold text-slate-500">${{ number_format((float) $cita->monto_pagado, 2) }}</p>
+                                    @endif
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-right">
                                     <div class="inline-flex flex-wrap justify-end gap-2">
@@ -174,7 +196,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <p class="text-sm font-semibold text-slate-500">No hay citas para mostrar.</p>
                                 </td>
                             </tr>

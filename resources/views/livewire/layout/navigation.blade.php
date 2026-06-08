@@ -79,11 +79,24 @@ new class extends Component
             @endrole
 
             @if(auth()->user()?->hasRole('paciente') || auth()->user()?->can('citas.ver'))
-                <a href="{{ route('citas.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                <a href="{{ route('citas.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.index', 'citas.create', 'citas.edit', 'historias-clinicas.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
                     @role('paciente') Mis citas @else Citas @endrole
                 </a>
+                <a href="{{ route('citas.calendar') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('citas.calendar') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M7 15h3m4 0h3M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+                    Calendario
+                </a>
             @endif
+
+            @hasanyrole(['admin', 'recepcionista'])
+                @can('citas.ver')
+                    <a href="{{ route('reportes.index') }}" wire:navigate class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition {{ request()->routeIs('reportes.*') ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-slate-600 hover:bg-violet-50 hover:text-violet-700' }}">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16V9m4 7V7m4 9v-5"/></svg>
+                        Reportes
+                    </a>
+                @endcan
+            @endhasanyrole
         </nav>
 
         <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -143,8 +156,14 @@ new class extends Component
                 @endrole
 
                 @if(auth()->user()?->hasRole('paciente') || auth()->user()?->can('citas.ver'))
-                    <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.*')" wire:navigate>@role('paciente') Mis citas @else Citas @endrole</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('citas.index')" :active="request()->routeIs('citas.index', 'citas.create', 'citas.edit', 'historias-clinicas.*')" wire:navigate>@role('paciente') Mis citas @else Citas @endrole</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('citas.calendar')" :active="request()->routeIs('citas.calendar')" wire:navigate>Calendario</x-responsive-nav-link>
                 @endif
+                @hasanyrole(['admin', 'recepcionista'])
+                    @can('citas.ver')
+                        <x-responsive-nav-link :href="route('reportes.index')" :active="request()->routeIs('reportes.*')" wire:navigate>Reportes</x-responsive-nav-link>
+                    @endcan
+                @endhasanyrole
                 <x-responsive-nav-link :href="route('profile')" :active="request()->routeIs('profile')" wire:navigate>Perfil</x-responsive-nav-link>
             </div>
 

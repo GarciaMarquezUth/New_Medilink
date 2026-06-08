@@ -69,12 +69,14 @@ class CitaController extends Controller
         $selectedMedicoId = $request->old('medico_id', $request->query('medico_id'));
         $selectedServicioId = $request->old('servicio_id', $request->query('servicio_id'));
         $servicios = $this->serviciosActivosParaMedico($selectedMedicoId ? (int) $selectedMedicoId : null);
+        $estadosPago = Cita::estadosPago();
+        $metodosPago = Cita::metodosPago();
 
         if ($selectedServicioId && ! $servicios->contains('id', (int) $selectedServicioId)) {
             $selectedServicioId = null;
         }
 
-        return view('Citas.create', compact('medicos', 'pacientes', 'servicios', 'selectedMedicoId', 'selectedServicioId'));
+        return view('Citas.create', compact('medicos', 'pacientes', 'servicios', 'selectedMedicoId', 'selectedServicioId', 'estadosPago', 'metodosPago'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -87,12 +89,18 @@ class CitaController extends Controller
             'servicio_id' => ['required', Rule::exists('servicios', 'id')->where(fn ($query) => $query->where('activo', true))],
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
+            'estado_pago' => ['nullable', Rule::in(array_keys(Cita::estadosPago()))],
+            'monto_pagado' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'metodo_pago' => ['nullable', Rule::in(array_keys(Cita::metodosPago()))],
         ]);
 
         $this->availability->ensureMedicoCanPerformService((int) $validated['medico_id'], (int) $validated['servicio_id']);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
         $validated['estado'] = Cita::ESTADO_AGENDADA;
+        $validated['estado_pago'] = ($validated['estado_pago'] ?? null) ?: Cita::PAGO_PENDIENTE;
+        $validated['monto_pagado'] = $validated['monto_pagado'] ?? null;
+        $validated['metodo_pago'] = $validated['metodo_pago'] ?? null;
 
         $cita = DB::transaction(function () use ($validated) {
             $this->availability->validateCanSchedule(
@@ -128,8 +136,10 @@ class CitaController extends Controller
         }
 
         $estados = Cita::estados();
+        $estadosPago = Cita::estadosPago();
+        $metodosPago = Cita::metodosPago();
 
-        return view('Citas.edit', compact('cita', 'medicos', 'pacientes', 'servicios', 'estados', 'selectedMedicoId', 'selectedServicioId'));
+        return view('Citas.edit', compact('cita', 'medicos', 'pacientes', 'servicios', 'estados', 'estadosPago', 'metodosPago', 'selectedMedicoId', 'selectedServicioId'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -146,11 +156,17 @@ class CitaController extends Controller
             'fecha_hora' => 'required|date',
             'motivo' => 'required|string|max:255',
             'estado' => 'required|in:'.implode(',', array_keys(Cita::estados())),
+            'estado_pago' => ['nullable', Rule::in(array_keys(Cita::estadosPago()))],
+            'monto_pagado' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'metodo_pago' => ['nullable', Rule::in(array_keys(Cita::metodosPago()))],
         ]);
 
         $this->availability->ensureMedicoCanPerformService((int) $validated['medico_id'], (int) $validated['servicio_id']);
 
         $validated['fecha_hora'] = str_replace('T', ' ', $validated['fecha_hora']);
+        $validated['estado_pago'] = ($validated['estado_pago'] ?? null) ?: Cita::PAGO_PENDIENTE;
+        $validated['monto_pagado'] = $validated['monto_pagado'] ?? null;
+        $validated['metodo_pago'] = $validated['metodo_pago'] ?? null;
 
         DB::transaction(function () use ($cita, $validated) {
             if (in_array($validated['estado'], Cita::estadosOcupantes(), true)) {

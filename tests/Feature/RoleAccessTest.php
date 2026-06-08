@@ -473,6 +473,107 @@ class RoleAccessTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_manage_cita_payment_status(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Pago');
+        $paciente = $this->createPaciente('Paciente Pago');
+        $servicio = $this->createServicio(30, $medico);
+        $this->createDisponibilidad($medico, 1);
+
+        $this->actingAs($admin)
+            ->post(route('citas.store'), [
+                'medico_id' => $medico->id,
+                'paciente_id' => $paciente->id,
+                'servicio_id' => $servicio->id,
+                'fecha_hora' => '2026-06-01T09:00',
+                'motivo' => 'Consulta con pago parcial',
+                'estado_pago' => Cita::PAGO_PARCIAL,
+                'monto_pagado' => '50.00',
+                'metodo_pago' => 'efectivo',
+            ])
+            ->assertRedirect(route('citas.index'));
+
+        $cita = Cita::firstOrFail();
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado_pago' => Cita::PAGO_PARCIAL,
+            'monto_pagado' => 50,
+            'metodo_pago' => 'efectivo',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('citas.update', $cita->id), [
+                'medico_id' => $medico->id,
+                'paciente_id' => $paciente->id,
+                'servicio_id' => $servicio->id,
+                'fecha_hora' => '2026-06-01T10:00',
+                'motivo' => 'Consulta pagada',
+                'estado' => Cita::ESTADO_CONFIRMADA,
+                'estado_pago' => Cita::PAGO_PAGADO,
+                'monto_pagado' => '100.00',
+                'metodo_pago' => 'tarjeta',
+            ])
+            ->assertRedirect(route('citas.index'));
+
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado_pago' => Cita::PAGO_PAGADO,
+            'monto_pagado' => 100,
+            'metodo_pago' => 'tarjeta',
+        ]);
+    }
+
+    public function test_medico_calendar_only_shows_own_citas(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $otroMedicoUser = $this->userWithRole('medico');
+
+        $this->createCitaForMedico('Paciente Calendario Propio', 'Doctor Calendario', $medicoUser);
+        $this->createCitaForMedico('Paciente Calendario Ajeno', 'Doctor Calendario Ajeno', $otroMedicoUser);
+
+        $this->actingAs($medicoUser)
+            ->get(route('citas.calendar', ['mes' => '2026-06']))
+            ->assertOk()
+            ->assertSee('Calendario de citas')
+            ->assertSee('Paciente Calendario Propio')
+            ->assertDontSee('Paciente Calendario Ajeno');
+    }
+
+    public function test_admin_can_view_reports_with_payment_totals(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $medico = $this->createMedico('Doctor Reporte');
+        $paciente = $this->createPaciente('Paciente Reporte');
+        $servicio = $this->createServicio(30, $medico);
+
+        Cita::create([
+            'medico_id' => $medico->id,
+            'paciente_id' => $paciente->id,
+            'servicio_id' => $servicio->id,
+            'fecha_hora' => '2026-06-01 09:00:00',
+            'motivo' => 'Consulta para reporte',
+            'estado' => Cita::ESTADO_ATENDIDA,
+            'estado_pago' => Cita::PAGO_PAGADO,
+            'monto_pagado' => 100,
+            'metodo_pago' => 'tarjeta',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('reportes.index', [
+                'fecha_desde' => '2026-06-01',
+                'fecha_hasta' => '2026-06-30',
+            ]))
+            ->assertOk()
+            ->assertSee('Reportes clínicos')
+            ->assertSee('Ingresos registrados')
+            ->assertSee('$100.00')
+            ->assertSee('Doctor Reporte')
+            ->assertSee('Consulta 30 minutos')
+            ->assertSee('Paciente Reporte');
+    }
+
     public function test_citas_reject_service_not_assigned_to_selected_medico(): void
     {
         $admin = $this->userWithRole('admin');

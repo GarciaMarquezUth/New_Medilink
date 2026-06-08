@@ -18,6 +18,14 @@ class Cita extends Model
 
     public const ESTADO_NO_SHOW = 'no_show';
 
+    public const PAGO_PENDIENTE = 'pendiente';
+
+    public const PAGO_PARCIAL = 'parcial';
+
+    public const PAGO_PAGADO = 'pagado';
+
+    public const PAGO_EXENTO = 'exento';
+
     /**
      * Los atributos que se pueden asignar masivamente.
      */
@@ -28,6 +36,9 @@ class Cita extends Model
         'fecha_hora',
         'motivo',
         'estado',
+        'estado_pago',
+        'monto_pagado',
+        'metodo_pago',
         'recordatorio_enviado_at',
     ];
 
@@ -39,6 +50,7 @@ class Cita extends Model
     {
         return [
             'fecha_hora' => 'datetime',
+            'monto_pagado' => 'decimal:2',
             'recordatorio_enviado_at' => 'datetime',
         ];
     }
@@ -57,6 +69,27 @@ class Cita extends Model
     public static function estadosOcupantes(): array
     {
         return [self::ESTADO_AGENDADA, self::ESTADO_CONFIRMADA];
+    }
+
+    public static function estadosPago(): array
+    {
+        return [
+            self::PAGO_PENDIENTE => 'Pendiente',
+            self::PAGO_PARCIAL => 'Parcial',
+            self::PAGO_PAGADO => 'Pagado',
+            self::PAGO_EXENTO => 'Exento',
+        ];
+    }
+
+    public static function metodosPago(): array
+    {
+        return [
+            'efectivo' => 'Efectivo',
+            'tarjeta' => 'Tarjeta',
+            'transferencia' => 'Transferencia',
+            'seguro' => 'Seguro médico',
+            'otro' => 'Otro',
+        ];
     }
 
     /**
