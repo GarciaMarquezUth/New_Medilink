@@ -163,7 +163,7 @@ class PacienteController extends Controller
             abort(403, 'Tu usuario médico no está vinculado a un registro de médico.');
         }
 
-        $citas = Cita::with('servicio')
+        $citas = Cita::with(['servicio', 'historiaClinica'])
             ->where('medico_id', $medico->id)
             ->where('paciente_id', $paciente->id)
             ->orderByDesc('fecha_hora')

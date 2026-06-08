@@ -4,6 +4,7 @@ use App\Http\Controllers\CitaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\GmailOAuthController;
+use App\Http\Controllers\HistoriaClinicaController;
 use App\Http\Controllers\MedicoController;
 use App\Http\Controllers\PacienteCitaController;
 use App\Http\Controllers\PacienteController;
@@ -122,6 +123,8 @@ Route::middleware('auth')->group(function () {
         Route::middleware(['role:medico', 'permission:citas.editar'])->group(function () {
             Route::post('citas/{id}/atendida', [CitaController::class, 'marcarAtendida'])->name('citas.atendida');
             Route::post('citas/{id}/no-presentada', [CitaController::class, 'noPresentada'])->name('citas.no-presentada');
+            Route::get('citas/{cita}/historia-clinica', [HistoriaClinicaController::class, 'edit'])->name('historias-clinicas.edit');
+            Route::match(['post', 'put'], 'citas/{cita}/historia-clinica', [HistoriaClinicaController::class, 'update'])->name('historias-clinicas.update');
         });
     });
 });

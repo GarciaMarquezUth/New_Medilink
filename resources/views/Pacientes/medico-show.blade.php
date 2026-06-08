@@ -126,6 +126,7 @@
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Fecha</th>
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Servicio</th>
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Motivo</th>
+                                <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Historia</th>
                                 <th class="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-slate-500">Estado</th>
                             </tr>
                         </thead>
@@ -140,6 +141,16 @@
                                         @endif
                                     </td>
                                     <td class="min-w-64 px-6 py-4 text-sm font-medium text-slate-600">{{ $cita->motivo }}</td>
+                                    <td class="min-w-72 px-6 py-4 text-sm font-medium text-slate-600">
+                                        @if($cita->historiaClinica)
+                                            <p class="font-semibold text-slate-800">
+                                                {{ \Illuminate\Support\Str::limit($cita->historiaClinica->diagnostico ?: $cita->historiaClinica->observaciones ?: 'Historia clínica registrada', 90) }}
+                                            </p>
+                                            <a href="{{ route('historias-clinicas.edit', $cita->id) }}" class="mt-2 inline-flex rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100">Editar historia</a>
+                                        @else
+                                            <a href="{{ route('historias-clinicas.edit', $cita->id) }}" class="inline-flex rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">Agregar historia</a>
+                                        @endif
+                                    </td>
                                     <td class="whitespace-nowrap px-6 py-4">
                                         <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold ring-1 {{ $estadoClasses($cita->estado) }}">
                                             {{ $estadoLabels[$cita->estado] ?? str_replace('_', ' ', $cita->estado) }}

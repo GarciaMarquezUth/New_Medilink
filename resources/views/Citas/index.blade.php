@@ -141,6 +141,9 @@
 
                                         @role('medico')
                                             @can('citas.editar')
+                                                <a href="{{ route('historias-clinicas.edit', $cita->id) }}" class="rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100">
+                                                    {{ $cita->historiaClinica ? 'Ver historia' : 'Historia' }}
+                                                </a>
                                                 @if(in_array($cita->estado, $estadosOcupantes, true))
                                                     <form action="{{ route('citas.atendida', $cita->id) }}" method="POST">
                                                         @csrf

@@ -31,16 +31,16 @@ class CitaController extends Controller
         if ($user && $user->hasAnyRole(['admin', 'recepcionista'])) {
             $this->authorizePermission('citas.ver');
 
-            $query = Cita::with(['medico', 'paciente', 'servicio']);
+            $query = Cita::with(['medico', 'paciente', 'servicio', 'historiaClinica']);
         } elseif ($user && $user->hasRole('medico')) {
             $this->authorizePermission('citas.ver');
 
-            $query = Cita::with(['medico', 'paciente', 'servicio'])
+            $query = Cita::with(['medico', 'paciente', 'servicio', 'historiaClinica'])
                 ->whereHas('medico', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 });
         } else {
-            $query = Cita::with(['medico', 'paciente', 'servicio'])
+            $query = Cita::with(['medico', 'paciente', 'servicio', 'historiaClinica'])
                 ->whereHas('paciente', function ($query) use ($user) {
                     $query->where('user_id', $user?->id);
                 });

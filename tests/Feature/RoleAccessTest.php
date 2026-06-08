@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Cita;
 use App\Models\Disponibilidad;
+use App\Models\HistoriaClinica;
 use App\Models\Medico;
 use App\Models\Paciente;
 use App\Models\Servicio;
@@ -274,6 +275,66 @@ class RoleAccessTest extends TestCase
             'id' => $citaNoPresentada->id,
             'estado' => Cita::ESTADO_NO_SHOW,
         ]);
+    }
+
+    public function test_medico_can_save_clinical_history_for_own_cita(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $cita = $this->createCitaForMedico('Paciente Historia', 'Doctor Historia', $medicoUser);
+
+        $this->actingAs($medicoUser)
+            ->get(route('historias-clinicas.edit', $cita->id))
+            ->assertOk()
+            ->assertSee('Historia clínica')
+            ->assertSee('Paciente Historia');
+
+        $this->actingAs($medicoUser)
+            ->put(route('historias-clinicas.update', $cita->id), [
+                'diagnostico' => 'Migraña sin aura',
+                'tratamiento' => 'Reposo e hidratación',
+                'observaciones' => 'Paciente estable durante la consulta',
+                'receta' => 'Paracetamol 500 mg cada 8 horas por 3 días',
+                'indicaciones' => 'Regresar si presenta dolor persistente',
+                'seguimiento_fecha' => '2026-06-20',
+                'marcar_atendida' => '1',
+            ])
+            ->assertRedirect(route('historias-clinicas.edit', $cita->id));
+
+        $this->assertDatabaseHas('historias_clinicas', [
+            'cita_id' => $cita->id,
+            'diagnostico' => 'Migraña sin aura',
+            'created_by' => $medicoUser->id,
+            'updated_by' => $medicoUser->id,
+        ]);
+        $this->assertDatabaseHas('citas', [
+            'id' => $cita->id,
+            'estado' => Cita::ESTADO_ATENDIDA,
+        ]);
+
+        $this->actingAs($medicoUser)
+            ->get(route('medicos.pacientes.show', $cita->paciente_id))
+            ->assertOk()
+            ->assertSee('Migraña sin aura')
+            ->assertSee('Editar historia');
+    }
+
+    public function test_medico_cannot_manage_clinical_history_for_other_medico_cita(): void
+    {
+        $medicoUser = $this->userWithRole('medico');
+        $otroMedicoUser = $this->userWithRole('medico');
+        $citaAjena = $this->createCitaForMedico('Paciente Historia Ajena', 'Doctor Ajeno', $otroMedicoUser);
+
+        $this->actingAs($medicoUser)
+            ->get(route('historias-clinicas.edit', $citaAjena->id))
+            ->assertForbidden();
+
+        $this->actingAs($medicoUser)
+            ->put(route('historias-clinicas.update', $citaAjena->id), [
+                'diagnostico' => 'No autorizado',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame(0, HistoriaClinica::count());
     }
 
     public function test_medico_cannot_manage_citas(): void

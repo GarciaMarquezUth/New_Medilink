@@ -70,20 +70,22 @@ class DatabaseSeeder extends Seeder
             [...$data, 'activo' => true]
         ))->values();
 
+        $serviciosPorNombre = $servicios->keyBy('nombre');
+
         $medicosData = [
-            ['nombre' => 'Andrea', 'apellido' => 'Pérez', 'especialidad' => 'Medicina general', 'email' => 'medico@example.com', 'telefono' => '555-0101'],
-            ['nombre' => 'Carlos', 'apellido' => 'Ramírez', 'especialidad' => 'Cardiología', 'email' => 'medico2@example.com', 'telefono' => '555-0102'],
-            ['nombre' => 'María', 'apellido' => 'González', 'especialidad' => 'Pediatría', 'email' => 'medico3@example.com', 'telefono' => '555-0103'],
-            ['nombre' => 'Luis', 'apellido' => 'Torres', 'especialidad' => 'Dermatología', 'email' => 'medico4@example.com', 'telefono' => '555-0104'],
-            ['nombre' => 'Sofía', 'apellido' => 'Martínez', 'especialidad' => 'Odontología', 'email' => 'medico5@example.com', 'telefono' => '555-0105'],
-            ['nombre' => 'Daniel', 'apellido' => 'Hernández', 'especialidad' => 'Ginecología', 'email' => 'medico6@example.com', 'telefono' => '555-0106'],
-            ['nombre' => 'Valeria', 'apellido' => 'López', 'especialidad' => 'Nutrición', 'email' => 'medico7@example.com', 'telefono' => '555-0107'],
-            ['nombre' => 'Javier', 'apellido' => 'Castro', 'especialidad' => 'Psicología', 'email' => 'medico8@example.com', 'telefono' => '555-0108'],
-            ['nombre' => 'Paula', 'apellido' => 'Morales', 'especialidad' => 'Traumatología', 'email' => 'medico9@example.com', 'telefono' => '555-0109'],
-            ['nombre' => 'Miguel', 'apellido' => 'Vargas', 'especialidad' => 'Laboratorio clínico', 'email' => 'medico10@example.com', 'telefono' => '555-0110'],
+            ['nombre' => 'Andrea', 'apellido' => 'Pérez', 'especialidad' => 'Medicina general', 'email' => 'medico@example.com', 'telefono' => '555-0101', 'servicios' => ['Consulta general']],
+            ['nombre' => 'Carlos', 'apellido' => 'Ramírez', 'especialidad' => 'Cardiología', 'email' => 'medico2@example.com', 'telefono' => '555-0102', 'servicios' => ['Control cardiológico']],
+            ['nombre' => 'María', 'apellido' => 'González', 'especialidad' => 'Pediatría', 'email' => 'medico3@example.com', 'telefono' => '555-0103', 'servicios' => ['Pediatría']],
+            ['nombre' => 'Luis', 'apellido' => 'Torres', 'especialidad' => 'Dermatología', 'email' => 'medico4@example.com', 'telefono' => '555-0104', 'servicios' => ['Dermatología']],
+            ['nombre' => 'Sofía', 'apellido' => 'Martínez', 'especialidad' => 'Odontología', 'email' => 'medico5@example.com', 'telefono' => '555-0105', 'servicios' => ['Odontología']],
+            ['nombre' => 'Daniel', 'apellido' => 'Hernández', 'especialidad' => 'Ginecología', 'email' => 'medico6@example.com', 'telefono' => '555-0106', 'servicios' => ['Ginecología']],
+            ['nombre' => 'Valeria', 'apellido' => 'López', 'especialidad' => 'Nutrición', 'email' => 'medico7@example.com', 'telefono' => '555-0107', 'servicios' => ['Nutrición']],
+            ['nombre' => 'Javier', 'apellido' => 'Castro', 'especialidad' => 'Psicología', 'email' => 'medico8@example.com', 'telefono' => '555-0108', 'servicios' => ['Psicología']],
+            ['nombre' => 'Paula', 'apellido' => 'Morales', 'especialidad' => 'Traumatología', 'email' => 'medico9@example.com', 'telefono' => '555-0109', 'servicios' => ['Traumatología']],
+            ['nombre' => 'Miguel', 'apellido' => 'Vargas', 'especialidad' => 'Laboratorio clínico', 'email' => 'medico10@example.com', 'telefono' => '555-0110', 'servicios' => ['Laboratorio clínico']],
         ];
 
-        $medicos = collect($medicosData)->map(function (array $data, int $index) use ($servicios) {
+        $medicos = collect($medicosData)->map(function (array $data) use ($serviciosPorNombre) {
             $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 [
@@ -104,10 +106,10 @@ class DatabaseSeeder extends Seeder
                 ]
             );
 
-            $servicioIds = $servicios
-                ->slice($index, 3)
-                ->merge($servicios->take(max(0, $index + 3 - $servicios->count())))
-                ->pluck('id')
+            $servicioIds = collect($data['servicios'])
+                ->map(fn (string $nombre) => $serviciosPorNombre->get($nombre)?->id)
+                ->filter()
+                ->values()
                 ->all();
             $medico->servicios()->sync($servicioIds);
 

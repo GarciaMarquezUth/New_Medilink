@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Cita extends Model
 {
@@ -77,5 +78,10 @@ class Cita extends Model
     public function servicio(): BelongsTo
     {
         return $this->belongsTo(Servicio::class);
+    }
+
+    public function historiaClinica(): HasOne
+    {
+        return $this->hasOne(HistoriaClinica::class);
     }
 }
